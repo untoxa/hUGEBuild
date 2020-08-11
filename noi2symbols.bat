@@ -1,0 +1,1 @@
+@python .\tools\noi2sym.py .\rom\gbdk_player.noi >.\rom\gbdk_player.sym

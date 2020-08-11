@@ -1,0 +1,88 @@
+include "include/constants.inc"
+
+include "song//constants.htt"
+
+dn: MACRO ;; (note, instr, effect)
+    db \1
+    db ((\2 << 4) | (\3 >> 8))
+    db LOW(\3)
+ENDM
+
+EXPORT tempo
+
+EXPORT order_cnt
+EXPORT order1
+EXPORT order2
+EXPORT order3
+EXPORT order4
+
+EXPORT instruments
+EXPORT routines
+EXPORT waves
+
+SECTION "Song Data", ROM0
+
+tempo:
+db TICKS
+
+;;;;;;;;;;;
+;; Orders
+;;;;;;;;;;;
+
+include "song//order.htt"
+
+;;;;;;;;;;;;
+;; Patterns
+;;;;;;;;;;;;
+
+include "song//pattern.htt"
+
+;;;;;;;;;;;;;;;;
+;; Instruments
+;;;;;;;;;;;;;;;;
+
+;; Instruments come in blocks.
+
+instruments:
+
+include "song//instrument.htt"
+
+;;;;;;;;;;;;;
+;; Routines
+;;;;;;;;;;;;;
+
+routines:
+
+loadRoutine: MACRO
+__hUGE_Routine_\1:
+include "song//routine\1.htt"
+__end_hUGE_Routine_\1:
+ds 16 - (__end_hUGE_Routine_\1 - __hUGE_Routine_\1)
+ENDM
+
+  loadRoutine 0
+  loadRoutine 1
+  loadRoutine 2
+  loadRoutine 3
+  loadRoutine 4
+  loadRoutine 5
+  loadRoutine 6
+  loadRoutine 7
+  loadRoutine 8
+  loadRoutine 9
+  loadRoutine 10
+  loadRoutine 11
+  loadRoutine 12
+  loadRoutine 13
+  loadRoutine 14
+  loadRoutine 15
+
+;;;;;;;;;
+;; Waves
+;;;;;;;;;
+
+waves:
+
+include "song//wave.htt"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
