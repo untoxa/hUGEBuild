@@ -4,7 +4,7 @@ hUGEBuild is a refactoring of an original driver for hUGEReacker - music module 
 
 This new driver has several advantages:
 1. it is modular - the driver is separated from the player and from the music data.
-2. build scripts use enhanced converter utility that allows to converting RGBDS objects created by RGBDS assembler into SDAS objects, that might be linked with SDCC software.
+2. build scripts use enhanced converter utility that allows to converting RGBDS objects created by RGBDS assembler into SDAS objects, that might be linked with your own GBDK-powered project.
 
 # How to use
 
