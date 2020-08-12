@@ -2,7 +2,7 @@
 
 hUGEBuild is a refactoring of an original driver for hUGEReacker - music module tracker for game boy. The tracker itself may be found in the "releases" of this repo.
 
-This new driver has several advantages:
+This refactored driver has several advantages:
 1. it is modular - the driver is separated from the player and from the music data.
 2. build scripts use enhanced converter utility that allows to converting RGBDS objects created by RGBDS assembler into SDAS objects, that might be linked with your own GBDK-powered project.
 
@@ -20,3 +20,7 @@ This new driver has several advantages:
 1. SDCC header file for the driver is here: \player-gbdk\hUGEDriver.h, example of usage is gbdk_player.c
 2. New SDCC must be used, at least #11800. I suggest to take snapshot from here: http://sdcc.sourceforge.net/snap.php You may take GBDK-2020 library to link with. 
 3. If you need to use this with pure GBDK-2020 - no problem, just compile a song and a driver into objects and convert them with rgb2sdas utility. Just add converted objects to your project and use functions declared in hUGEDriver.h in your homebrew.
+
+# todo
+
+1. try to bring hUGETracker original project to life: it has a newer driver, with more functions, also a better UI, but is completely unusable because it is simply not working when compiled from the sources, and there are no more or less stable pre-compiled binaries of it to use.
