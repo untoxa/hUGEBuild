@@ -412,9 +412,11 @@ begin
   Assign(F, ParamStr(1) + '.o');
   Rewrite(F);
 
-  Writeln(F, 'XL');
-  Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections+1, Length(RObj.Symbols)]));
-  
+  Writeln(F, 'XL2');
+  Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections{+1}, Length(RObj.Symbols)]));
+  Writeln(F, Format('M %s', [StringReplace(ExtractFileName(ParamStr(1)), '.', '_', [rfReplaceAll])]));
+  Writeln(F, 'O -mgbz80');
+
   Idx:= 0;
   for I:= Low(RObj.Symbols) to High(RObj.Symbols) do  with RObj.Symbols[I] do begin
     if (SymType = 1) then begin
@@ -430,13 +432,12 @@ begin
     end;
   end;  
   
-//  Writeln(F, 'A _CODE size 0 flags 0'); // Insanity
+//  Writeln(F, 'A _CODE size 0 flags 0 addr 0'); // Insanity: _CODE must always exist?
+  
   for Section in RObj.Sections do begin
     if Section.Org = -1 then
-      //Writeln(F, Format('A %s size %x flags 0', [LeftStr(DelSpace(Section.Name), 25), Section.Size]))
-      Writeln(F, Format('A %s size %x flags 0', [IfThen(Section.SectType in [ROM0, ROMX], CODESEG, '_DATA'), Section.Size]))
+      Writeln(F, Format('A %s size %x flags 0 addr 0', [IfThen(Section.SectType in [ROM0, ROMX], CODESEG, '_DATA'), Section.Size]))
     else Die('absolute sections currently unsupported: ' + Section.Name);
-      //Writeln(F, Format('A %s size %x flags C', [LeftStr(DelSpace(Section.Name), 25), Section.Org+Section.Size]));
 
     for Symbol in RObj.Symbols do
       if Symbol.SectionID = Section.ID then begin

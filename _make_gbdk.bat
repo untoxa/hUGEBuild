@@ -11,7 +11,7 @@
 
 @set LNAMES=-g .OAM=0xC000 -g .STACK=0xE000 -g .refresh_OAM=0xFF80 -b _DATA=0xc0a0 -b _CODE=0x0200
 @set LFLAGS=-n -m -w -j -i -k %GBDKLIB%gbz80\ -l gbz80.lib -k %GBDKLIB%gb\ -l gb.lib %LNAMES%
-@set LFILES=%GBDKLIB%gb\crt0.o
+@set CRT0=%GBDKLIB%gb\crt0.o
 
 @set BINFLAGS=-yt 1 -yo 4
 
@@ -45,7 +45,7 @@ tools\rgb2sdas %OBJ%%MOD%.obj _CODE_1
 sdcc %CFLAGS% %SRC%%PROJ%.c -o %OBJ%%PROJ%.rel
 
 @echo LINKING...
-sdldgb %LFLAGS% %TGT%%PROJ%.ihx %LFILES% %OBJ%%PROJ%.rel 
+sdldgb %LFLAGS% %TGT%%PROJ%.ihx %CRT0% %OBJ%%PROJ%.rel %LFILES% 
 
 @echo MAKING BIN...
 makebin -Z %BINFLAGS% %TGT%%PROJ%.ihx %TGT%%PROJ%.gb

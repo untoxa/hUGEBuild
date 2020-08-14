@@ -5,20 +5,20 @@ include "include/hardware.inc"
 include "include/constants.inc"
 
 add_a_to_r16: MACRO
-    add a, \2
+    add \2
     ld \2, a
-    adc a, \1
+    adc \1
     sub \2
     ld \1, a
 ENDM
 
-;; TODO: See if there's a way to shave off a byte.
+;; Thanks PinoBatch!
 sub_from_r16: MACRO ;; (high, low, value)
     ld a, \2
     sub \3
     ld \2, a
-    ld a, \1
-    sbc a, 0
+    sbc a  ; A = -1 if borrow or 0 if not
+    add \1
     ld \1, a
 ENDM
 
@@ -117,54 +117,26 @@ _end_vars:
 SECTION "sound driver", ROM0
 
 _init_driver::
-    ;; Disable chanel 3
-    ld a, 0
-    ld [rAUD3ENA], a
-
-    ;; Load some wave data (or code) into _AUD3WAVERAM
-    ld hl, waves ;; note_table
-_addr = _AUD3WAVERAM
-    REPT 16
-    ld a, [hl+]
-    ld [_addr], a
-_addr = _addr + 1
-    ENDR
-
-    ;; Enable chanel 3
-    ld a, %10000000
-    ld [rAUD3ENA], a
-    ld a, $ff ;; full length (although this does nothing)
-    ld [rAUD3LEN], a
-    ld a, %0000000 ; 0%
-    ld [rAUD3LEVEL], a
+    ;; Zero some ram
+    ld c, _end_vars - _start_vars
+    ld hl, _start_vars
+    xor a
+.fill_loop:
+    ld [hl+], a
+    dec c
+    jp nz, .fill_loop
 
     ld a, %11110000
     ld [envelope1], a
     ld a, %11110000
     ld [envelope2], a
 
-    ;; Zero some ram
-    ld a, _end_vars - _start_vars
-    ld hl, _start_vars
-.fill_loop:
-    ld [hl], 0
-    inc hl
-    dec a
-    jp nz, .fill_loop
+    ld a, 100
+    ld [current_wave], a
 
     ;; Load starting speed (7 ticks per row)
     ld a, [tempo]
     ld [ticks_per_row], a
-
-    ; Enable sound globally
-    ld a, $80
-    ld [rAUDENA], a
-    ; Enable all channels in stereo
-    ld a, $FF
-    ld [rAUDTERM], a
-    ; Set volume
-    ld a, $77
-    ld [rAUDVOL], a
 
     ld a, [current_order]
     ld c, a ;; Current order index
@@ -255,9 +227,7 @@ _convert_note:
     ld     h, [hl]
     ld     l, a
 
-    ;; Need to clear the carry flag-- this complements it, but since the last
-    ;; thing that modified the flag always sets it, this will clear it.
-    ccf
+    scf
     ret
 
 _update_channel:
@@ -1013,10 +983,7 @@ fx_toneporta:
     jr .done
 
 .subtract:
-    push hl
-    ld h, c
-    sub_from_r16 d, e, h
-    pop hl
+    sub_from_r16 d, e, c
 
     jr .done
 .set_exact:
@@ -1387,16 +1354,7 @@ _noreset:
     ld a, b
     ld [row], a
 
-    IF DEF(PREVIEW_MODE)
-    db $fd ; Signal to the emulator to update the interface
-    ENDC
     ret
-
-_halt:
-    ; Do nothing, forever
-    halt
-    nop
-    jr _halt
 
 note_table:
 include "include/music.inc"
