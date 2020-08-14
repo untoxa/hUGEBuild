@@ -1,6 +1,6 @@
 # What is it
 
-hUGEBuild is a refactoring of an original driver for hUGEReacker - music module tracker for game boy. The tracker itself may be found in the "releases" of this repo.
+hUGEBuild is a refactoring of an original driver for hUGEReacker - music module tracker for game boy. The tracker itself may be found in the "releases" of this repo. Here is an original repository of hUGETracker: https://github.com/SuperDisk/hUGETracker It also contains a new driver, however, it is broken for now and it's new format is incompatible with this version. My goal was to put working parts of this project into one complex solution for writing and embedding music into homebrew software.
 
 This refactored driver has several advantages:
 1. it is modular - the driver is separated from the player and from the music data.
