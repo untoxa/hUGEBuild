@@ -55,8 +55,7 @@ SECTION "Vblank interrupt", ROM0[$0040]
     reti
 
 SECTION "LCD controller status interrupt", ROM0[$0048]
-    call _dosound
-    reti
+    jp isr_wrapper
 
 SECTION "Timer overflow interrupt", ROM0[$0050]
     reti
@@ -90,7 +89,19 @@ DB "NF"
 
 ; Initialization
 SECTION "main", ROM0[$0150]
-jp _init
+    jp _init
+
+isr_wrapper:
+    push af
+    push hl
+    push bc
+    push de
+    call _dosound
+    pop de
+    pop bc
+    pop hl
+    pop af
+    reti
 
 _paint_tile:
     ld a, b

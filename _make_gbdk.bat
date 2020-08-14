@@ -1,4 +1,4 @@
-@rem @echo off
+@echo off
 @set PROJ=gbdk_player
 @set GBDK=..\..\gbdk\
 @set GBDKLIB=%GBDK%lib\small\asxxxx\
@@ -19,10 +19,10 @@
 
 @echo Cleanup...
 
-@if exist %TGT%%PROJ%.gb del %PROJ%.gb
-@if exist %TGT%%PROJ%.sym del %PROJ%.map
-@if exist %TGT%%PROJ%.sym del %PROJ%.ihx
-@if exist %TGT%%PROJ%.map del %PROJ%.noi
+@if exist %TGT%%PROJ%.gb del %TGT%%PROJ%.gb
+@if exist %TGT%%PROJ%.sym del %TGT%%PROJ%.map
+@if exist %TGT%%PROJ%.sym del %TGT%%PROJ%.ihx
+@if exist %TGT%%PROJ%.map del %TGT%%PROJ%.noi
 
 @if not exist %OBJ% mkdir %OBJ%
 @if not exist %TGT% mkdir %TGT%
@@ -36,7 +36,7 @@ tools\rgb2sdas %OBJ%%DRV%.obj
 
 @set MOD=song
 tools\rgbasm -o%OBJ%%MOD%.obj %MOD%.z80
-tools\rgb2sdas %OBJ%%MOD%.obj _CODE_1
+tools\rgb2sdas -c_CODE_1 %OBJ%%MOD%.obj
 @set LFILES=%LFILES% %OBJ%%MOD%.obj.o
 
 

@@ -76,6 +76,7 @@ ENDM
   loadRoutine 13
   loadRoutine 14
   loadRoutine 15
+  ret
 
 ;;;;;;;;;
 ;; Waves

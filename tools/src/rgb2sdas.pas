@@ -47,7 +47,7 @@ type
   end;
 
   TRObj = packed record
-    ID: array[0..3] of Char;
+    ID: array[0..3] of AnsiChar;
     RevisionNumber: LongInt;
     NumberOfSymbols: LongInt;
     NumberOfSections: LongInt;
@@ -105,11 +105,8 @@ const
   SRAM = 6;
   OAM = 7;
 
-procedure Die(S: String);
-begin
-  WriteLn(S);
-  Halt
-end;
+procedure Die(const S: String);
+begin WriteLn(S); Halt; end;
 
 function ReadNullTerm(S: TStream): String; // really
 var
@@ -125,15 +122,15 @@ begin
 end;
 
 function ReadObjFile(S: TStream): TRObj;
+const Sign : array[0..3] of AnsiChar = 'RGB9';
 var
   I, J: Integer;
 begin
   S.Read(Result, SizeOf(TRObj) - SizeOf(Result.Symbols) - SizeOf(Result.Sections));
-writeln('NumberOfSymbols ', Result.NumberOfSymbols);  
-writeln('NumberOfSections ', Result.NumberOfSections);
+  if not (CompareMem(@Result.ID, @Sign, sizeof(Result.ID)) and (Result.RevisionNumber = 5)) then Die('Unsupported object file format!');
   SetLength(Result.Symbols, Result.NumberOfSymbols);
   SetLength(Result.Sections, Result.NumberOfSections);
-writeln('reading symbols...');
+
   for I := 0 to Result.NumberOfSymbols-1 do begin
     Result.Symbols[I] := Default(TRSymbol);
     with Result.Symbols[I] do begin
@@ -148,14 +145,12 @@ writeln('reading symbols...');
       end;
     end;
   end;
-writeln('reading sections...');
+
   for I := 0 to Result.NumberOfSections-1 do begin
     Result.Sections[I] := Default(TRSection);
-writeln('  reading section: ', I);
     with Result.Sections[I] do begin
       ID := I;
       Name := ReadNullTerm(S);
-writeln('    section name: "', Name, '"');      
       S.Read(Size, SizeOf(Size));
       S.Read(SectType, SizeOf(SectType));
       S.Read(Org, SizeOf(Org));
@@ -169,23 +164,20 @@ writeln('    section name: "', Name, '"');
         SetLength(Patches, NumberOfPatches);
       end;
     end;
-writeln('    reading patches...');
+
     for J := 0 to Result.Sections[I].NumberOfPatches-1 do begin
       with Result.Sections[I].Patches[J] do begin
         SourceFile := ReadNullTerm(S);
-writeln('      SourceFile: "', SourceFile, '"');      
         S.Read(Offset, SizeOf(Offset));
         S.Read(PCSectionID, SizeOf(PCSectionID));
         S.Read(PCOffset, SizeOf(PCOffset));
         S.Read(PatchType, SizeOf(PatchType));
         S.Read(RPNSize, SizeOf(RPNSize));
-writeln('      RPNSize: ', RPNSize);              
         SetLength(RPN, RPNSize);
         S.Read(RPN[0], RPNSize);
       end;
     end;
   end;
-writeln('loaded!');  
 end;
 
 function RPNToString(const RPN: array of Byte; const Syms: array of TRSymbol): String;
@@ -325,7 +317,7 @@ begin
         Node.SymbolID := ReadLong;
         PushRPN(Node);
       end;
-      else die('got malformed RPN!');
+      else Die('got malformed RPN!');
     end;
   end;
 end;
@@ -342,8 +334,6 @@ begin
   for Sym in O.Symbols do
     Writeln(Format('%s on %d: type=%d, section=%d, value=%d',
                    [Sym.Name, Sym.LineNum, Sym.SymType, Sym.SectionID, Sym.Value]));
-
-  Writeln;
   Writeln;
 
   WriteLn('-=-=- Sections -=-=-');
@@ -364,7 +354,6 @@ begin
     for Patch in Sect.Patches do begin
       Writeln(Format('%s: %d ; %s', [Patch.SourceFile, Patch.PatchType, RPNToString(Patch.RPN, O.Symbols)]));
     end;
-    Writeln;
     writeln;
   end;
 end;
@@ -399,21 +388,37 @@ var
   WritePos: Word;
   Idx: Integer;
   CODESEG: string;
-begin
-  if (ParamCount() < 1) then Die('Usage: rgb2sdas <object_name> [<code_section>]');
+  sourcename, tmp: string;
   
-  S := TFileStream.Create(ParamStr(1), fmOpenRead);
+  verbose: boolean = false;
+
+begin
+  if (ParamCount() < 1) then Die('Usage: rgb2sdas [-c<code_section>] [-v] <object_name>');
+  
+  sourcename:= ParamStr(ParamCount());
+  if not FileExists(sourcename) then Die(format('File not found: %s', [sourcename]));
+  
+  CODESEG:= '_CODE';
+  for I:= 1 to ParamCount() - 1 do begin
+    tmp:= ParamStr(i);
+    if (CompareText(tmp, '-v') = 0) then 
+      verbose:= true 
+    else if (CompareText(copy(tmp, 1, 2), '-c') = 0) then begin
+      CODESEG:= copy(tmp, 3, length(tmp));
+      if length(CODESEG) = 0 then CODESEG:= '_CODE';
+      if verbose then writeln('Using CODESEG: ', CODESEG);
+    end;    
+  end;
+
+  S := TFileStream.Create(sourcename, fmOpenRead);
   RObj := ReadObjFile(S);
-  PrintObjFile(RObj);
+  if verbose then PrintObjFile(RObj);
 
-  CODESEG:= ParamStr(2); 
-  if (length(CODESEG) = 0) then CODESEG:= '_CODE';
-
-  Assign(F, ParamStr(1) + '.o');
+  Assign(F, sourcename + '.o');
   Rewrite(F);
 
   Writeln(F, 'XL2');
-  Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections{+1}, Length(RObj.Symbols)]));
+  Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections, Length(RObj.Symbols)]));
   Writeln(F, Format('M %s', [StringReplace(ExtractFileName(ParamStr(1)), '.', '_', [rfReplaceAll])]));
   Writeln(F, 'O -mgbz80');
 
@@ -431,8 +436,6 @@ begin
       Inc(Idx);
     end;
   end;  
-  
-//  Writeln(F, 'A _CODE size 0 flags 0 addr 0'); // Insanity: _CODE must always exist?
   
   for Section in RObj.Sections do begin
     if Section.Org = -1 then
@@ -455,8 +458,7 @@ begin
     I := Low(Section.Data);
     while I <= High(Section.Data) do begin
       WritePos := I;
-      if Section.Org <> -1 then Inc(WritePos, Section.Org);
-      if (Section.Org <> -1) and (WritePos >= $200) then Writeln('Section ', Section.Name, ' is clobbering ', WritePos);
+      if (Section.Org <> -1) then Inc(WritePos, Section.Org);
 
       if FindPatch(Section, I, Patch) then begin
         case Patch.PatchType of
@@ -466,15 +468,13 @@ begin
             ValueToWrite := Symbol.Value;
             if RPN[High(RPN)].Tag = rpnPlus then
               Inc(ValueToWrite, RPN[1].IntValue);
-            {if RObj.Sections[Symbol.SectionID].SectType = WRAM0 then
-              Inc(ValueToWrite, $C000);}
 
             if (Symbol.SymType = 1) then begin
                 Writeln(F, Format('T %.2x %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), lo(ValueToWrite), hi(ValueToWrite)]));
-                Writeln(F, Format('R 00 00 %.2x %.2x 02 02 %.2x %.2x', [lo(Sct{+1}), hi(Sct{+1}), lo(Symbol.No), hi(Symbol.No)]));
+                Writeln(F, Format('R 00 00 %.2x %.2x 02 02 %.2x %.2x', [lo(Sct), hi(Sct), lo(Symbol.No), hi(Symbol.No)]));
             end else begin
                 Writeln(F, Format('T %.2x %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), lo(ValueToWrite), hi(ValueToWrite)]));
-                Writeln(F, Format('R 00 00 %.2x %.2x 00 02 %.2x %.2x', [lo(Sct{+1}), hi(Sct{+1}), lo(Symbol.SectionID{+1}), hi(Symbol.SectionID{+1})]));
+                Writeln(F, Format('R 00 00 %.2x %.2x 00 02 %.2x %.2x', [lo(Sct), hi(Sct), lo(Symbol.SectionID), hi(Symbol.SectionID)]));
             end;
             Inc(I, 2);
           end;
@@ -483,7 +483,7 @@ begin
             if Length(RPN) > 1 then Die('Not handling bigger RPN on JR');
             Symbol := RObj.Symbols[RPN[0].SymbolID];
             Writeln(F, Format('T %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), Byte(Symbol.Value - I - 1)]));
-            Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct{+1}), hi(Sct{+1})]));
+            Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct), hi(Sct)]));
             Inc(I);
           end
           else begin
@@ -494,13 +494,13 @@ begin
       end
       else begin
         Writeln(F, Format('T %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), Section.Data[I]]));
-        Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct{+1}), hi(Sct{+1})]));
+        Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct), hi(Sct)]));
         Inc(I);
       end;
     end;
   end;
 
-  Writeln('Success!');
+  Writeln('rgb2sdas converting ',sourcename,' --> ',sourcename,'.o result: success!');
   Close(F);
 end.
 
