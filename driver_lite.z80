@@ -1053,6 +1053,7 @@ _dosound::
     ld [rAUD1ENV], a
     inc de
     ld a, [de]
+    ld [rAUD1HIGH], a
 
 .write_mask1:
     ld [highmask1], a
@@ -1092,6 +1093,7 @@ _dosound::
     ld [rAUD2ENV], a
     inc de
     ld a, [de]
+    ld [rAUD2HIGH], a
 
 .write_mask2:
     ld [highmask2], a
@@ -1163,6 +1165,7 @@ _addr = _addr + 1
 
 .no_wave_copy:
     ld a, [de]
+    ld [rAUD3HIGH], a
 
 .write_mask3:
     ld [highmask3], a
@@ -1200,6 +1203,7 @@ _addr = _addr + 1
     ld [rAUD4POLY], a
     inc de
     ld a, [de]
+    ld [rAUD4GO], a
 
 .write_mask4:
     ld [highmask4], a

@@ -95,6 +95,22 @@ type
   end;
   TRPN = array of TRPNNode;
 
+type 
+  TObjFileStream = class(TFileStream)
+    function ReadNullTerm: string; virtual;
+  end;
+
+function TObjFileStream.ReadNullTerm: string;
+var B: Byte;
+begin
+  Result := '';
+  while True do begin
+    B := ReadByte;
+    if B = 0 then Exit;
+    Result += Chr(B);
+  end
+end;
+
 const
   WRAM0 = 0;
   VRAM = 1;
@@ -108,76 +124,64 @@ const
 procedure Die(const S: String);
 begin WriteLn(S); Halt; end;
 
-function ReadNullTerm(S: TStream): String; // really
-var
-  B: Byte;
-begin
-  Result := '';
-
-  while True do begin
-    B := S.ReadByte;
-    if B = 0 then Exit;
-    Result += Chr(B)
-  end
-end;
-
-function ReadObjFile(S: TStream): TRObj;
+function ReadObjFile(const afilename: string): TRObj;
 const Sign : array[0..3] of AnsiChar = 'RGB9';
-var
-  I, J: Integer;
+var I, J: Integer;
 begin
-  S.Read(Result, SizeOf(TRObj) - SizeOf(Result.Symbols) - SizeOf(Result.Sections));
-  if not (CompareMem(@Result.ID, @Sign, sizeof(Result.ID)) and (Result.RevisionNumber = 5)) then Die('Unsupported object file format!');
-  SetLength(Result.Symbols, Result.NumberOfSymbols);
-  SetLength(Result.Sections, Result.NumberOfSections);
+  with TObjFileStream.Create(afilename, fmOpenRead) do try 
+    Read(Result, SizeOf(TRObj) - SizeOf(Result.Symbols) - SizeOf(Result.Sections));
+    if not (CompareMem(@Result.ID, @Sign, sizeof(Result.ID)) and (Result.RevisionNumber = 5)) then Die('Unsupported object file format!');
+    SetLength(Result.Symbols, Result.NumberOfSymbols);
+    SetLength(Result.Sections, Result.NumberOfSections);
 
-  for I := 0 to Result.NumberOfSymbols-1 do begin
-    Result.Symbols[I] := Default(TRSymbol);
-    with Result.Symbols[I] do begin
-      ID := I;
-      Name := ReadNullTerm(S);
-      S.Read(SymType, 1);
-      if (SymType and $7F) <> 1 then begin
-        FileName := ReadNullTerm(S);
-        S.Read(LineNum, SizeOf(LineNum));
-        S.Read(SectionID, SizeOf(SectionID));
-        S.Read(Value, SizeOf(Value));
-      end;
-    end;
-  end;
-
-  for I := 0 to Result.NumberOfSections-1 do begin
-    Result.Sections[I] := Default(TRSection);
-    with Result.Sections[I] do begin
-      ID := I;
-      Name := ReadNullTerm(S);
-      S.Read(Size, SizeOf(Size));
-      S.Read(SectType, SizeOf(SectType));
-      S.Read(Org, SizeOf(Org));
-      S.Read(Bank, SizeOf(Bank));
-      S.Read(Align, SizeOf(Align));
-      S.Read(Ofs, SizeOf(Ofs));
-      if ((SectType = ROMX) or (SectType = ROM0)) then begin
-        SetLength(Data, Size);
-        S.Read(Data[0], Size);
-        S.Read(NumberOfPatches, SizeOf(NumberOfPatches));
-        SetLength(Patches, NumberOfPatches);
+    for I := 0 to Result.NumberOfSymbols-1 do begin
+      Result.Symbols[I] := Default(TRSymbol);
+      with Result.Symbols[I] do begin
+        ID := I;
+        Name := ReadNullTerm;
+        Read(SymType, 1);
+        if (SymType and $7F) <> 1 then begin
+          FileName := ReadNullTerm;
+          Read(LineNum, SizeOf(LineNum));
+          Read(SectionID, SizeOf(SectionID));
+          Read(Value, SizeOf(Value));
+        end;
       end;
     end;
 
-    for J := 0 to Result.Sections[I].NumberOfPatches-1 do begin
-      with Result.Sections[I].Patches[J] do begin
-        SourceFile := ReadNullTerm(S);
-        S.Read(Offset, SizeOf(Offset));
-        S.Read(PCSectionID, SizeOf(PCSectionID));
-        S.Read(PCOffset, SizeOf(PCOffset));
-        S.Read(PatchType, SizeOf(PatchType));
-        S.Read(RPNSize, SizeOf(RPNSize));
-        SetLength(RPN, RPNSize);
-        S.Read(RPN[0], RPNSize);
+    for I := 0 to Result.NumberOfSections-1 do begin
+      Result.Sections[I] := Default(TRSection);
+      with Result.Sections[I] do begin
+        ID := I;
+        Name := ReadNullTerm;
+        Read(Size, SizeOf(Size));
+        Read(SectType, SizeOf(SectType));
+        Read(Org, SizeOf(Org));
+        Read(Bank, SizeOf(Bank));
+        Read(Align, SizeOf(Align));
+        Read(Ofs, SizeOf(Ofs));
+        if ((SectType = ROMX) or (SectType = ROM0)) then begin
+          SetLength(Data, Size);
+          Read(Data[0], Size);
+          Read(NumberOfPatches, SizeOf(NumberOfPatches));
+          SetLength(Patches, NumberOfPatches);
+        end;
+      end;
+
+      for J := 0 to Result.Sections[I].NumberOfPatches-1 do begin
+        with Result.Sections[I].Patches[J] do begin
+          SourceFile := ReadNullTerm;
+          Read(Offset, SizeOf(Offset));
+          Read(PCSectionID, SizeOf(PCSectionID));
+          Read(PCOffset, SizeOf(PCOffset));
+          Read(PatchType, SizeOf(PatchType));
+          Read(RPNSize, SizeOf(RPNSize));
+          SetLength(RPN, RPNSize);
+          Read(RPN[0], RPNSize);
+        end;
       end;
     end;
-  end;
+  finally free; end;
 end;
 
 function RPNToString(const RPN: array of Byte; const Syms: array of TRSymbol): String;
@@ -330,31 +334,28 @@ var
   Patch: TRPatch;
   SectSize: Integer;
 begin
-  WriteLn('-=-=- Symbols -=-=-');
+  WriteLn('Symbols:');
   for Sym in O.Symbols do
-    Writeln(Format('%s on %d: type=%d, section=%d, value=%d',
+    Writeln(Format('  %s on %d: type=%d, section=%d, value=%d',
                    [Sym.Name, Sym.LineNum, Sym.SymType, Sym.SectionID, Sym.Value]));
-  Writeln;
-
-  WriteLn('-=-=- Sections -=-=-');
+    
   SectSize := 0;
   for Sect in O.Sections do
     if (Sect.Org <> -1) and ((Sect.SectType = ROM0) or (Sect.SectType = ROMX)) then Inc(SectSize, Sect.Size);
   Writeln('Absolute sections: ', SectSize, ' bytes');
+  
   SectSize := 0;
   for Sect in O.Sections do
     if (Sect.Org = -1) and ((Sect.SectType = ROM0) or (Sect.SectType = ROMX)) then Inc(SectSize, Sect.Size);
   Writeln('Relative sections: ', SectSize, ' bytes');
-  Writeln;
 
+  WriteLn('Sections:');
   for Sect in O.Sections do begin
-    Writeln(Format('%s with size %d: offset=%d, patches=%d, bank=%d',
+    Writeln(Format('  %s with size %d: offset=%d, patches=%d, bank=%d',
                    [Sect.Name, Sect.Size, Sect.Org, Sect.NumberOfPatches, Sect.Bank]));
 
-    for Patch in Sect.Patches do begin
-      Writeln(Format('%s: %d ; %s', [Patch.SourceFile, Patch.PatchType, RPNToString(Patch.RPN, O.Symbols)]));
-    end;
-    writeln;
+    for Patch in Sect.Patches do 
+      Writeln(Format('    %s: %d ; %s', [Patch.SourceFile, Patch.PatchType, RPNToString(Patch.RPN, O.Symbols)]));
   end;
 end;
 
@@ -372,7 +373,6 @@ begin
 end;
 
 var
-  S: TStream;
   RObj: TRObj;
 
   Symbol: TRSymbol;
@@ -410,8 +410,7 @@ begin
     end;    
   end;
 
-  S := TFileStream.Create(sourcename, fmOpenRead);
-  RObj := ReadObjFile(S);
+  RObj := ReadObjFile(sourcename);
   if verbose then PrintObjFile(RObj);
 
   Assign(F, sourcename + '.o');
