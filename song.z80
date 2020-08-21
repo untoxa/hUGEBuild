@@ -1,6 +1,6 @@
 include "include/constants.inc"
 
-include "song//constants.htt"
+include "constants.htt"
 
 dn: MACRO ;; (note, instr, effect)
     db \1
@@ -25,13 +25,13 @@ dw waves
 ;; Orders
 ;;;;;;;;;;;
 
-include "song//order.htt"
+include "order.htt"
 
 ;;;;;;;;;;;;
 ;; Patterns
 ;;;;;;;;;;;;
 
-include "song//pattern.htt"
+include "pattern.htt"
 
 ;;;;;;;;;;;;;;;;
 ;; Instruments
@@ -41,7 +41,7 @@ include "song//pattern.htt"
 
 instruments:
 
-include "song//instrument.htt"
+include "instrument.htt"
 
 ;;;;;;;;;;;;;
 ;; Routines
@@ -51,7 +51,7 @@ routines:
 
 loadRoutine: MACRO
 __hUGE_Routine_\1:
-include "song//routine\1.htt"
+include "routine\1.htt"
 __end_hUGE_Routine_\1:
 ds 16 - (__end_hUGE_Routine_\1 - __hUGE_Routine_\1)
 ENDM
@@ -80,6 +80,6 @@ ENDM
 
 waves:
 
-include "song//wave.htt"
+include "wave.htt"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

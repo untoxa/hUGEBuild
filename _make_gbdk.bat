@@ -36,7 +36,7 @@ tools\rgb2sdas %CVTFLAGS% %OBJ%%DRV%.obj
 @set LFILES=%LFILES% %OBJ%%DRV%.obj.o
 
 @set MOD=song
-tools\rgbasm -o%OBJ%%MOD%.obj %MOD%.z80
+tools\rgbasm -i%MOD% -o%OBJ%%MOD%.obj %MOD%.z80
 tools\rgb2sdas %CVTFLAGS% -c_CODE_1 -r_song_descriptor=_Intro %OBJ%%MOD%.obj
 @set LFILES=%LFILES% %OBJ%%MOD%.obj.o
 
