@@ -401,18 +401,22 @@ var
   CODESEG: string;
   sourcename, tmp: string;
   
+  old_sym, new_sym: string;
+  
   verbose: boolean = false;
   
   export_all: boolean = false;
 
 begin
   if (ParamCount() < 1) then begin 
-    Writeln('Usage: rgb2sdas [-c<code_section>] [-v] [-e] <object_name>');
+    Writeln('Usage: rgb2sdas [-c<code_section>] [-v] [-e] [-r<symbol1>=<symbol2>] <object_name>');
     Halt;
   end;
   
   sourcename:= ParamStr(ParamCount());
   if not FileExists(sourcename) then Die('File not found: %s', [sourcename]);
+  
+  old_sym:= ''; new_sym:= '';
   
   CODESEG:= '_CODE';
   for I:= 1 to ParamCount() - 1 do begin
@@ -425,6 +429,13 @@ begin
       CODESEG:= copy(tmp, 3, length(tmp));
       if length(CODESEG) = 0 then CODESEG:= '_CODE';
       if verbose then writeln('Using CODESEG: ', CODESEG);
+    end else if (CompareText(copy(tmp, 1, 2), '-r') = 0) then begin
+      tmp:= copy(tmp, 3, length(tmp));
+      Idx:= pos('=', tmp);
+      if (idx > 0) then begin
+        old_sym:= copy(tmp, 1, idx - 1);
+        new_sym:= copy(tmp, idx + 1, length(tmp));
+      end;
     end;    
   end;
   
@@ -451,6 +462,8 @@ begin
                      end;
         SYM_IMPORT : ;
         SYM_EXPORT : begin
+                       // rename exported symbol if requested
+                       if (length(old_sym) > 0) and (Name = old_sym) then Name:= new_sym;
                        No:= Idx;
                        Inc(Idx);
                      end;

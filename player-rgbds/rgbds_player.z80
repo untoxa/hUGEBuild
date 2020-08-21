@@ -96,7 +96,7 @@ isr_wrapper:
     push hl
     push bc
     push de
-    call _dosound
+    call _hUGE_dosound
     pop de
     pop bc
     pop hl
@@ -152,7 +152,8 @@ _init:
     ld a, $77
     ld [rAUDVOL], a
 
-    call _init_driver
+    ld hl, _song_descriptor
+    call hUGE_init
 
     ;; Enable the timer
     ; ld a, TACF_START | TACF_4KHZ

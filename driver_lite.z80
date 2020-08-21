@@ -38,11 +38,44 @@ ret_dont_call_playnote: MACRO
     jp hl
 ENDM
 
+load_hl_ind: MACRO
+    ld hl, \1
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a
+ENDM
+
+load_de_ind: MACRO
+    ld a, [\1]
+    ld e, a
+    ld a, [\1 + 1]
+    ld d, a
+ENDM
+
+copy_pointer_from_hl: MACRO
+    ld a, [hl+]
+    ld [\1], a
+    ld a, [hl+]
+    ld [\1+1], a
+ENDM
+
 PATTERN_LENGTH EQU 64
 
 SECTION "Playback variables", WRAM0
 _start_vars:
 
+;; active song descriptor
+order_cnt: db
+order1: dw
+order2: dw
+order3: dw
+order4: dw
+
+instruments: dw
+routines: dw
+waves: dw
+
+;; variables
 pattern1: dw
 pattern2: dw
 pattern3: dw
@@ -116,7 +149,18 @@ _end_vars:
 ; Initialization
 SECTION "sound driver", ROM0
 
-_init_driver::
+_hUGE_init::
+    push bc
+    ld hl, sp+4
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a    
+    call hUGE_init
+    pop bc
+    ret
+
+hUGE_init::
+    push hl
     ;; Zero some ram
     ld c, _end_vars - _start_vars
     ld hl, _start_vars
@@ -134,9 +178,25 @@ _init_driver::
     ld a, 100
     ld [current_wave], a
 
-    ;; Load starting speed (7 ticks per row)
-    ld a, [tempo]
+    pop hl
+    ld a, [hl+] ; tempo
     ld [ticks_per_row], a
+
+    ld a, [hl+]
+    ld e, a
+    ld a, [hl+]
+    ld d, a
+    ld a, [de]
+    ld [order_cnt], a
+
+    copy_pointer_from_hl order1
+    copy_pointer_from_hl order2
+    copy_pointer_from_hl order3
+    copy_pointer_from_hl order4
+    
+    copy_pointer_from_hl instruments
+    copy_pointer_from_hl routines
+    copy_pointer_from_hl waves
 
     ld a, [current_order]
     ld c, a ;; Current order index
@@ -150,10 +210,14 @@ _refresh_patterns:
 
 ;; Call with c set to what order to load
 load_pattern: MACRO
-    ld hl, 0
-    ld l, c
-    ld de, \1
-    add hl, de
+    ld hl, \1
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a
+    ld a, b
+    ld b, 0
+    add hl, bc
+    ld b, a
 
     ld a, [hl+]
     ld [\2], a
@@ -469,7 +533,7 @@ fx_call_routine:
     ;; Routines are 16 bytes. Shift left to multiply by 16, then
     ;; jump to that location.
 
-    ld hl, routines
+    load_hl_ind routines
     ld a, c
     swap a
     ; and %11110000 is this necessary?
@@ -1020,12 +1084,14 @@ _setup_instrument_pointer:
     sla a
     sla a
 
-    ld de, instruments
+    push af
+    load_de_ind instruments
+    pop af
     add_a_to_de
     rla ; reset the Z flag
     ret
 
-_dosound::
+_hUGE_dosound::
     ld a, [tick]
     or a
     jp nz, .process_effects
@@ -1148,7 +1214,9 @@ _dosound::
     jr z, .no_wave_copy
     ld [hl], a
     swap a
-    ld hl, waves
+    push af
+    load_hl_ind waves
+    pop af
     add_a_to_hl
     ld a, 0
     ld [rAUD3ENA], a

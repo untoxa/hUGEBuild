@@ -8,22 +8,18 @@ dn: MACRO ;; (note, instr, effect)
     db LOW(\3)
 ENDM
 
-EXPORT tempo
-
-EXPORT order_cnt
-EXPORT order1
-EXPORT order2
-EXPORT order3
-EXPORT order4
-
-EXPORT instruments
-EXPORT routines
-EXPORT waves
-
 SECTION "Song Data", ROM0
 
-tempo:
-db TICKS
+;; song descriptor
+
+_song_descriptor::
+db TICKS  ; tempo
+dw order_cnt
+dw order1, order2, order3, order4
+
+dw instruments
+dw routines
+dw waves
 
 ;;;;;;;;;;;
 ;; Orders
