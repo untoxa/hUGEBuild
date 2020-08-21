@@ -38,6 +38,17 @@ ret_dont_call_playnote: MACRO
     jp hl
 ENDM
 
+add_a_ind_ret_hl: MACRO
+    ld hl, \1
+    add [hl]
+    inc hl
+    ld h, [hl]
+    ld l, a
+    adc h
+    sub l
+    ld h, a
+ENDM
+
 load_hl_ind: MACRO
     ld hl, \1
     ld a, [hl+]
@@ -45,10 +56,13 @@ load_hl_ind: MACRO
     ld l, a
 ENDM
 
-load_de_ind: MACRO
-    ld a, [\1]
+add_a_ind_ret_de: MACRO
     ld e, a
-    ld a, [\1 + 1]
+    ld a, [\1]
+    add e
+    ld e, a
+    ld a, [\1+1]
+    adc 0
     ld d, a
 ENDM
 
@@ -1084,10 +1098,8 @@ _setup_instrument_pointer:
     sla a
     sla a
 
-    push af
-    load_de_ind instruments
-    pop af
-    add_a_to_de
+    add_a_ind_ret_de instruments
+
     rla ; reset the Z flag
     ret
 
@@ -1214,10 +1226,8 @@ _hUGE_dosound::
     jr z, .no_wave_copy
     ld [hl], a
     swap a
-    push af
-    load_hl_ind waves
-    pop af
-    add_a_to_hl
+    add_a_ind_ret_hl waves
+
     ld a, 0
     ld [rAUD3ENA], a
 

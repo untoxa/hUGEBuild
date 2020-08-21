@@ -21,6 +21,25 @@ This refactored driver has several advantages:
 2. New SDCC must be used, at least #11800. I suggest to take snapshot from here: http://sdcc.sourceforge.net/snap.php You may take GBDK-2020 library to link with. 
 3. If you need to use this with pure GBDK-2020 - no problem, just compile a song and a driver into objects and convert them with rgb2sdas utility. Just add converted objects to your project and use functions declared in hUGEDriver.h in your homebrew.
 
+# rgb2sdas
+
+rgb2sdas is a utility that converts RGBDS object files to SDAS object files. unfortunately, 100% complete conversion is impossible, however, utility provides sufficient subset of features to convert simple objects.
+
+	usage: 
+		rgb2sdas [-c<code_section>] [-v] [-e] [-r<symbol1>=<symbol2>] <object_name>
+
+		-v -- verbous output, outputs debug information
+		-e -- export all symbols, including local
+		-r -- renames symbol symbol1 to symbol2
+		-c -- codeseg area name
+
+	example 1; converting the driver object:
+		rgb2sdas driver_lite.obj
+
+	example 2; converting the song object, place it into bank 1, rename symbol to Intro:
+		rgb2sdas -c_CODE_1 -r_song_descriptor=_Intro song.obj
+
+
 # todo
 
 1. try to bring hUGETracker original project to life: it has a newer driver, with more functions, also a better UI, but is completely unusable because it is simply not working when compiled from the sources, and there are no more or less stable pre-compiled binaries of it to use.
