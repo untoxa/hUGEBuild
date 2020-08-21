@@ -13,6 +13,7 @@
 @set LFLAGS=-n -m -w -j -i -k %GBDKLIB%gbz80\ -l gbz80.lib -k %GBDKLIB%gb\ -l gb.lib %LNAMES%
 @set CRT0=%GBDKLIB%gb\crt0.o
 
+@rem @set CVTFLAGS=-e
 @set BINFLAGS=-yt 1 -yo 4
 
 @set ASMFLAGS=-plosgff -I%GBDKLIB%
@@ -31,12 +32,12 @@
 
 @set DRV=driver_lite
 tools\rgbasm -o%OBJ%%DRV%.obj %DRV%.z80
-tools\rgb2sdas %OBJ%%DRV%.obj
+tools\rgb2sdas %CVTFLAGS% %OBJ%%DRV%.obj
 @set LFILES=%LFILES% %OBJ%%DRV%.obj.o
 
 @set MOD=song
 tools\rgbasm -o%OBJ%%MOD%.obj %MOD%.z80
-tools\rgb2sdas -c_CODE_1 %OBJ%%MOD%.obj
+tools\rgb2sdas %CVTFLAGS% -c_CODE_1 %OBJ%%MOD%.obj
 @set LFILES=%LFILES% %OBJ%%MOD%.obj.o
 
 

@@ -87,12 +87,12 @@ type
     rpnSymbol);
 
   TRPNNode = record
-    case Tag: TRPNTag of
-      rpnBankSymbol: (BankSymbol: Integer);
-      rpnBankSection: (BankSection: Integer);
-      rpnInteger: (IntValue: Integer);
-      rpnSymbol: (SymbolID: Integer);
-  end;
+               case Tag: TRPNTag of
+                 rpnBankSymbol: (BankSymbol: Integer);
+                 rpnBankSection: (BankSection: Integer);
+                 rpnInteger: (IntValue: Integer);
+                 rpnSymbol: (SymbolID: Integer);
+             end;
   TRPN = array of TRPNNode;
 
 type 
@@ -121,8 +121,21 @@ const
   SRAM = 6;
   OAM = 7;
 
-procedure Die(const S: String);
-begin WriteLn(S); Halt; end;
+const 
+  SYM_LOCAL = 0;
+  SYM_IMPORT = 1; 
+  SYM_EXPORT = 2;
+
+const 
+  PATCH_BYTE = 0;
+  PATCH_LE_WORD = 1;
+  PATCH_LE_LONG = 2;
+  PATCH_JR = 3;
+
+procedure Die(const S: String); overload;
+begin WriteLn('ERROR:', S); Halt; end;
+procedure Die(const fmt: String; const params: array of const); overload;
+begin Die(format(fmt, params)); end;
 
 function ReadObjFile(const afilename: string): TRObj;
 const Sign : array[0..3] of AnsiChar = 'RGB9';
@@ -130,7 +143,7 @@ var I, J: Integer;
 begin
   with TObjFileStream.Create(afilename, fmOpenRead) do try 
     Read(Result, SizeOf(TRObj) - SizeOf(Result.Symbols) - SizeOf(Result.Sections));
-    if not (CompareMem(@Result.ID, @Sign, sizeof(Result.ID)) and (Result.RevisionNumber = 5)) then Die('Unsupported object file format!');
+    if not (CompareMem(@Result.ID, @Sign, sizeof(Result.ID)) and (Result.RevisionNumber = 5)) then Die('Unsupported object file version!');
     SetLength(Result.Symbols, Result.NumberOfSymbols);
     SetLength(Result.Sections, Result.NumberOfSections);
 
@@ -140,7 +153,7 @@ begin
         ID := I;
         Name := ReadNullTerm;
         Read(SymType, 1);
-        if (SymType and $7F) <> 1 then begin
+        if ((SymType and $7F) <> SYM_IMPORT) then begin
           FileName := ReadNullTerm;
           Read(LineNum, SizeOf(LineNum));
           Read(SectionID, SizeOf(SectionID));
@@ -188,19 +201,19 @@ function RPNToString(const RPN: array of Byte; const Syms: array of TRSymbol): S
 var
   I: Integer;
 
-function ReadLong: LongWord;
-begin
-  Inc(I);
-  Result := RPN[I];
-  Inc(I);
-  Result := (Result shl 8) or RPN[I];
-  Inc(I);
-  Result := (Result shl 8) or RPN[I];
-  Inc(I);
-  Result := (Result shl 8) or RPN[I];
-  Inc(I);
-  Result := SwapEndian(Result);
-end;
+  function ReadLong: LongWord;
+  begin
+    Inc(I);
+    Result := RPN[I];
+    Inc(I);
+    Result := (Result shl 8) or RPN[I];
+    Inc(I);
+    Result := (Result shl 8) or RPN[I];
+    Inc(I);
+    Result := (Result shl 8) or RPN[I];
+    Inc(I);
+    Result := SwapEndian(Result);
+  end;
 
 begin
   Result := '';
@@ -208,32 +221,32 @@ begin
   I := Low(RPN);
   while I <= High(RPN) do begin
     case RPN[I] of
-      $00: begin Result += '+ '; Inc(I); end;
-      $01: begin Result += '- '; Inc(I); end;
-      $02: begin Result += '* '; Inc(I); end;
-      $03: begin Result += '/ '; Inc(I); end;
-      $04: begin Result += '% '; Inc(I);  end;
+      $00: begin Result += '+ ';   Inc(I); end;
+      $01: begin Result += '- ';   Inc(I); end;
+      $02: begin Result += '* ';   Inc(I); end;
+      $03: begin Result += '/ ';   Inc(I); end;
+      $04: begin Result += '% ';   Inc(I); end;
       $05: begin Result += 'neg '; Inc(I); end;
-      $10: begin Result += '| '; Inc(I); end;
-      $11: begin Result += '& '; Inc(I); end;
-      $12: begin Result += '^ '; Inc(I); end;
-      $13: begin Result += '~ '; Inc(I); end;
-      $21: begin Result += '&& '; Inc(I);   end;
-      $22: begin Result += '|| '; Inc(I);   end;
-      $23: begin Result += '! '; Inc(I);        end;
-      $30: begin Result += '== '; Inc(I);   end;
-      $31: begin Result += '!= '; Inc(I);   end;
-      $32: begin Result += '> '; Inc(I);  end;
-      $33: begin Result += '< '; Inc(I);  end;
-      $34: begin Result += '>= '; Inc(I);   end;
-      $35: begin Result += '<= '; Inc(I);   end;
-      $40: begin Result += '<< '; Inc(I);   end;
-      $41: begin Result += '>> '; Inc(I);   end;
+      $10: begin Result += '| ';   Inc(I); end;
+      $11: begin Result += '& ';   Inc(I); end;
+      $12: begin Result += '^ ';   Inc(I); end;
+      $13: begin Result += '~ ';   Inc(I); end;
+      $21: begin Result += '&& ';  Inc(I); end;
+      $22: begin Result += '|| ';  Inc(I); end;
+      $23: begin Result += '! ';   Inc(I); end;
+      $30: begin Result += '== ';  Inc(I); end;
+      $31: begin Result += '!= ';  Inc(I); end;
+      $32: begin Result += '> ';   Inc(I); end;
+      $33: begin Result += '< ';   Inc(I); end;
+      $34: begin Result += '>= ';  Inc(I); end;
+      $35: begin Result += '<= ';  Inc(I); end;
+      $40: begin Result += '<< ';  Inc(I); end;
+      $41: begin Result += '>> ';  Inc(I); end;
       $50: begin Result += '(bank-sym ' + IntToStr(ReadLong)+') '; end;
       $51: begin Result += '(bank-section ' + IntToStr(ReadLong)+') '; end;
       $52: begin Result += 'current-bank'; Inc(I); end;
-      $60: begin Result += 'hram-check'; Inc(I); end;
-      $61: begin Result += 'rst-check'; Inc(I); end;
+      $60: begin Result += 'hram-check';   Inc(I); end;
+      $61: begin Result += 'rst-check';    Inc(I); end;
       $80: begin Result += '(int ' + IntToStr(ReadLong)+') '; end;
       $81: begin Result += '(sym ' + Syms[ReadLong].Name+') '; end;
       else Exit('INVALID!');
@@ -246,30 +259,28 @@ var
   I: Integer;
   Node: TRPNNode;
 
-function ReadLong: LongWord;
-begin
-  Inc(I);
-  Result := RPN[I];
-  Inc(I);
-  Result := (Result shl 8) or RPN[I];
-  Inc(I);
-  Result := (Result shl 8) or RPN[I];
-  Inc(I);
-  Result := (Result shl 8) or RPN[I];
-  Inc(I);
-  Result := SwapEndian(Result);
-end;
+  function ReadLong: LongWord;
+  begin
+    Inc(I);
+    Result := RPN[I];
+    Inc(I);
+    Result := (Result shl 8) or RPN[I];
+    Inc(I);
+    Result := (Result shl 8) or RPN[I];
+    Inc(I);
+    Result := (Result shl 8) or RPN[I];
+    Inc(I);
+    Result := SwapEndian(Result);
+  end;
 
-function nd(Tag: TRPNTag): TRPNNode;
-begin
-  Result.Tag := Tag;
-end;
+  function nd(Tag: TRPNTag): TRPNNode;
+  begin Result.Tag := Tag; end;
 
-procedure PushRPN(Node: TRPNNode);
-begin
-  SetLength(Result, Length(Result)+1);
-  Result[High(Result)] := Node;
-end;
+  procedure PushRPN(Node: TRPNNode);
+  begin
+    SetLength(Result, Length(Result)+1);
+    Result[High(Result)] := Node;
+  end;
 
 begin
   SetLength(Result, 0);
@@ -277,51 +288,51 @@ begin
   while I <= High(RPN) do begin
     //Writeln(Format('Parsing %x, len=%d', [RPN[I], Length(Result)]));
     case RPN[I] of
-      $00: begin PushRPN(Nd(rpnPlus)); Inc(I); end;
-      $01: begin PushRPN(Nd(rpnMinus)); Inc(I); end;
-      $02: begin PushRPN(Nd(rpnTimes)); Inc(I); end;
-      $03: begin PushRPN(Nd(rpnDiv)); Inc(I); end;
-      $04: begin PushRPN(Nd(rpnMod)); Inc(I);  end;
-      $05: begin PushRPN(Nd(rpnNegate)); Inc(I); end;
-      $10: begin PushRPN(Nd(rpnOr));  Inc(I); end;
-      $11: begin PushRPN(Nd(rpnAnd)); Inc(I); end;
-      $12: begin PushRPN(Nd(rpnXor)); Inc(I); end;
-      $13: begin PushRPN(Nd(rpnComplement)); Inc(I); end;
-      $21: begin PushRPN(Nd(rpnBoolAnd)); Inc(I);   end;
-      $22: begin PushRPN(Nd(rpnBoolOr)); Inc(I);   end;
-      $23: begin PushRPN(Nd(rpnBoolNeg)); Inc(I);        end;
-      $30: begin PushRPN(Nd(rpnEqual)); Inc(I);   end;
-      $31: begin PushRPN(Nd(rpnNotEqual)); Inc(I);   end;
-      $32: begin PushRPN(Nd(rpnGreater)); Inc(I);  end;
-      $33: begin PushRPN(Nd(rpnLess)); Inc(I);  end;
-      $34: begin PushRPN(Nd(rpnGreaterEqual)); Inc(I);   end;
-      $35: begin PushRPN(Nd(rpnLessEqual)); Inc(I);   end;
-      $40: begin PushRPN(Nd(rpnShl)); Inc(I);   end;
-      $41: begin PushRPN(Nd(rpnShr)); Inc(I);   end;
+      $00: begin PushRPN(Nd(rpnPlus));         Inc(I); end;
+      $01: begin PushRPN(Nd(rpnMinus));        Inc(I); end;
+      $02: begin PushRPN(Nd(rpnTimes));        Inc(I); end;
+      $03: begin PushRPN(Nd(rpnDiv));          Inc(I); end;
+      $04: begin PushRPN(Nd(rpnMod));          Inc(I); end;
+      $05: begin PushRPN(Nd(rpnNegate));       Inc(I); end;
+      $10: begin PushRPN(Nd(rpnOr));           Inc(I); end;
+      $11: begin PushRPN(Nd(rpnAnd));          Inc(I); end;
+      $12: begin PushRPN(Nd(rpnXor));          Inc(I); end;
+      $13: begin PushRPN(Nd(rpnComplement));   Inc(I); end;
+      $21: begin PushRPN(Nd(rpnBoolAnd));      Inc(I); end;
+      $22: begin PushRPN(Nd(rpnBoolOr));       Inc(I); end;
+      $23: begin PushRPN(Nd(rpnBoolNeg));      Inc(I); end;
+      $30: begin PushRPN(Nd(rpnEqual));        Inc(I); end;
+      $31: begin PushRPN(Nd(rpnNotEqual));     Inc(I); end;
+      $32: begin PushRPN(Nd(rpnGreater));      Inc(I); end;
+      $33: begin PushRPN(Nd(rpnLess));         Inc(I); end;
+      $34: begin PushRPN(Nd(rpnGreaterEqual)); Inc(I); end;
+      $35: begin PushRPN(Nd(rpnLessEqual));    Inc(I); end;
+      $40: begin PushRPN(Nd(rpnShl));          Inc(I); end;
+      $41: begin PushRPN(Nd(rpnShr));          Inc(I); end;
       $50: begin
-        Node.Tag := rpnBankSymbol;
-        Node.BankSymbol := ReadLong;
-        PushRPN(Node);
-      end;
+             Node.Tag := rpnBankSymbol;
+             Node.BankSymbol := ReadLong;
+             PushRPN(Node);
+           end;
       $51: begin
-        Node.Tag := rpnBankSection;
-        Node.BankSection := ReadLong;
-        PushRPN(Node);
-      end;
-      $52: begin PushRPN(Nd(rpnCurrentBank)); Inc(I); end;
-      $60: begin PushRPN(Nd(rpnHramCheck));  Inc(I); end;
-      $61: begin PushRPN(Nd(rpnRstCheck));  Inc(I); end;
+             Node.Tag := rpnBankSection;
+             Node.BankSection := ReadLong;
+             PushRPN(Node);
+           end;
+      $52: begin PushRPN(Nd(rpnCurrentBank));  Inc(I); end;
+      $60: begin PushRPN(Nd(rpnHramCheck));    Inc(I); end;
+      $61: begin PushRPN(Nd(rpnRstCheck));     Inc(I); end;
       $80: begin
-        Node.Tag := rpnInteger;
-        Node.IntValue := ReadLong;
-        PushRPN(Node);
-      end;
+             Node.Tag := rpnInteger;
+             Node.IntValue := ReadLong;
+             PushRPN(Node);
+           end;
       $81: begin
-        Node.Tag := rpnSymbol;
-        Node.SymbolID := ReadLong;
-        PushRPN(Node);
-      end;
-      else Die('got malformed RPN!');
+             Node.Tag := rpnSymbol;
+             Node.SymbolID := ReadLong;
+             PushRPN(Node);
+           end;
+      else Die('Got malformed RPN!');
     end;
   end;
 end;
@@ -391,115 +402,137 @@ var
   sourcename, tmp: string;
   
   verbose: boolean = false;
+  
+  export_all: boolean = false;
 
 begin
-  if (ParamCount() < 1) then Die('Usage: rgb2sdas [-c<code_section>] [-v] <object_name>');
+  if (ParamCount() < 1) then begin 
+    Writeln('Usage: rgb2sdas [-c<code_section>] [-v] [-e] <object_name>');
+    Halt;
+  end;
   
   sourcename:= ParamStr(ParamCount());
-  if not FileExists(sourcename) then Die(format('File not found: %s', [sourcename]));
+  if not FileExists(sourcename) then Die('File not found: %s', [sourcename]);
   
   CODESEG:= '_CODE';
   for I:= 1 to ParamCount() - 1 do begin
     tmp:= ParamStr(i);
     if (CompareText(tmp, '-v') = 0) then 
       verbose:= true 
+    else if (CompareText(copy(tmp, 1, 2), '-e') = 0) then
+      export_all:= true
     else if (CompareText(copy(tmp, 1, 2), '-c') = 0) then begin
       CODESEG:= copy(tmp, 3, length(tmp));
       if length(CODESEG) = 0 then CODESEG:= '_CODE';
       if verbose then writeln('Using CODESEG: ', CODESEG);
     end;    
   end;
-
+  
   RObj := ReadObjFile(sourcename);
   if verbose then PrintObjFile(RObj);
 
   Assign(F, sourcename + '.o');
   Rewrite(F);
-
-  Writeln(F, 'XL2');
-  Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections, Length(RObj.Symbols)]));
-  Writeln(F, Format('M %s', [StringReplace(ExtractFileName(ParamStr(1)), '.', '_', [rfReplaceAll])]));
-  Writeln(F, 'O -mgbz80');
-
-  Idx:= 0;
-  for I:= Low(RObj.Symbols) to High(RObj.Symbols) do  with RObj.Symbols[I] do begin
-    if (SymType = 1) then begin
-      Writeln(F, Format('S %s Ref%.4x', [StringReplace(Name, '.', '____', [rfReplaceAll]), 0]));
-      No:= Idx;
-      Inc(Idx);
-    end;
-  end;  
-  for I:= Low(RObj.Symbols) to High(RObj.Symbols) do with RObj.Symbols[I] do begin
-    if (SymType <> 1) then begin
-      No:= Idx;
-      Inc(Idx);
-    end;
-  end;  
-  
-  for Section in RObj.Sections do begin
-    if Section.Org = -1 then
-      Writeln(F, Format('A %s size %x flags 0 addr 0', [IfThen(Section.SectType in [ROM0, ROMX], CODESEG, '_DATA'), Section.Size]))
-    else Die('absolute sections currently unsupported: ' + Section.Name);
-
-    for Symbol in RObj.Symbols do
-      if Symbol.SectionID = Section.ID then begin
-        if (Symbol.SymType <> 1) then 
-          Writeln(F, Format('S %s Def%.4x', [StringReplace(Symbol.Name, '.', '____', [rfReplaceAll]), Symbol.Value]));
+  try 
+    Idx:= 0;
+    // pass 1: all imports first
+    for I:= Low(RObj.Symbols) to High(RObj.Symbols) do with RObj.Symbols[I] do begin
+      if ((SymType and $7f) = SYM_IMPORT) then begin
+        No:= Idx;
+        Inc(Idx);
+      end else No:= -1;
+    end;  
+    // pass 2: all other (export local only when forced)
+    for I:= Low(RObj.Symbols) to High(RObj.Symbols) do with RObj.Symbols[I] do begin
+      case (SymType and $7f) of
+        SYM_LOCAL  : if export_all then begin
+                       No:= Idx;
+                       Inc(Idx);
+                     end;
+        SYM_IMPORT : ;
+        SYM_EXPORT : begin
+                       No:= Idx;
+                       Inc(Idx);
+                     end;
+        else         Die('Unsupported symbol type: %d', [SymType and $7f]);
       end;
-  end;
+    end;  
 
-  for Sct := Low(RObj.Sections) to High(RObj.Sections) do begin
-    Section := RObj.Sections[Sct];
+    // output object header
+    Writeln(F, 'XL2');
+    Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections, idx]));
+    Writeln(F, Format('M %s', [StringReplace(ExtractFileName(ParamStr(1)), '.', '_', [rfReplaceAll])]));
+    Writeln(F, 'O -mgbz80');
 
-    if (Section.SectType <> ROMX) and (Section.SectType <> ROM0) then Continue;
-    if Length(Section.Data) <= 0 then Continue;
+    // output all imported symbols
+    for I:= Low(RObj.Symbols) to High(RObj.Symbols) do 
+      with RObj.Symbols[I] do 
+        if (SymType = SYM_IMPORT) then 
+          Writeln(F, Format('S %s Ref%.4x', [StringReplace(Name, '.', '____', [rfReplaceAll]), 0]));
+    
+    // output all sections and other symbols
+    for Section in RObj.Sections do begin
+      if Section.Org = -1 then
+        Writeln(F, Format('A %s size %x flags 0 addr 0', [IfThen(Section.SectType in [ROM0, ROMX], CODESEG, '_DATA'), Section.Size]))
+      else Die('absolute sections currently unsupported: %s', [Section.Name]);
 
-    I := Low(Section.Data);
-    while I <= High(Section.Data) do begin
-      WritePos := I;
-      if (Section.Org <> -1) then Inc(WritePos, Section.Org);
-
-      if FindPatch(Section, I, Patch) then begin
-        case Patch.PatchType of
-          1: begin
-            RPN := ParseRPN(Patch.RPN);
-            Symbol := RObj.Symbols[RPN[0].SymbolID];
-            ValueToWrite := Symbol.Value;
-            if RPN[High(RPN)].Tag = rpnPlus then
-              Inc(ValueToWrite, RPN[1].IntValue);
-
-            if (Symbol.SymType = 1) then begin
-                Writeln(F, Format('T %.2x %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), lo(ValueToWrite), hi(ValueToWrite)]));
-                Writeln(F, Format('R 00 00 %.2x %.2x 02 02 %.2x %.2x', [lo(Sct), hi(Sct), lo(Symbol.No), hi(Symbol.No)]));
-            end else begin
-                Writeln(F, Format('T %.2x %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), lo(ValueToWrite), hi(ValueToWrite)]));
-                Writeln(F, Format('R 00 00 %.2x %.2x 00 02 %.2x %.2x', [lo(Sct), hi(Sct), lo(Symbol.SectionID), hi(Symbol.SectionID)]));
-            end;
-            Inc(I, 2);
-          end;
-          3: begin
-            RPN := ParseRPN(Patch.RPN);
-            if Length(RPN) > 1 then Die('Not handling bigger RPN on JR');
-            Symbol := RObj.Symbols[RPN[0].SymbolID];
-            Writeln(F, Format('T %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), Byte(Symbol.Value - I - 1)]));
-            Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct), hi(Sct)]));
-            Inc(I);
-          end
-          else begin
-            Die('Unsupported patch type: ' + IntToStr(Patch.PatchType));
-            Inc(I);
-          end;
+      for Symbol in RObj.Symbols do
+        if Symbol.SectionID = Section.ID then begin
+          if (Symbol.SymType <> SYM_IMPORT) and (Symbol.No >= 0) then 
+            Writeln(F, Format('S %s Def%.4x', [StringReplace(Symbol.Name, '.', '____', [rfReplaceAll]), Symbol.Value]));
         end;
-      end
-      else begin
-        Writeln(F, Format('T %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), Section.Data[I]]));
-        Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct), hi(Sct)]));
-        Inc(I);
+    end;
+
+    // convert object itself
+    for Sct := Low(RObj.Sections) to High(RObj.Sections) do begin
+      Section := RObj.Sections[Sct];
+
+      if (Section.SectType <> ROMX) and (Section.SectType <> ROM0) then Continue;
+      if Length(Section.Data) <= 0 then Continue;
+
+      I := Low(Section.Data);
+      while I <= High(Section.Data) do begin
+        WritePos := I;
+        if (Section.Org <> -1) then Inc(WritePos, Section.Org);
+
+        if FindPatch(Section, I, Patch) then begin
+          case Patch.PatchType of
+            PATCH_LE_WORD : begin
+                              RPN := ParseRPN(Patch.RPN);
+                              Symbol := RObj.Symbols[RPN[0].SymbolID];
+                              ValueToWrite := Symbol.Value;
+                              if RPN[High(RPN)].Tag = rpnPlus then
+                                Inc(ValueToWrite, RPN[1].IntValue);
+
+                              if (Symbol.SymType = SYM_IMPORT) then begin
+                                  if (Symbol.No < 0) then Die('Trying to reference eliminated symbol');
+                                  Writeln(F, Format('T %.2x %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), lo(ValueToWrite), hi(ValueToWrite)]));
+                                  Writeln(F, Format('R 00 00 %.2x %.2x 02 02 %.2x %.2x', [lo(Sct), hi(Sct), lo(Symbol.No), hi(Symbol.No)]));
+                              end else begin
+                                  Writeln(F, Format('T %.2x %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), lo(ValueToWrite), hi(ValueToWrite)]));
+                                  Writeln(F, Format('R 00 00 %.2x %.2x 00 02 %.2x %.2x', [lo(Sct), hi(Sct), lo(Symbol.SectionID), hi(Symbol.SectionID)]));
+                              end;
+                              Inc(I, 2);
+                            end;
+            PATCH_JR      : begin
+                              RPN := ParseRPN(Patch.RPN);
+                              if Length(RPN) > 1 then Die('Not handling bigger RPN on JR');
+                              Symbol := RObj.Symbols[RPN[0].SymbolID];
+                              Writeln(F, Format('T %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), Byte(Symbol.Value - I - 1)]));
+                              Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct), hi(Sct)]));
+                              Inc(I);
+                            end
+            else            Die('Unsupported patch type: %d', [Patch.PatchType]);
+          end;
+        end else begin
+          Writeln(F, Format('T %.2x %.2x %.2x', [lo(WritePos), hi(WritePos), Section.Data[I]]));
+          Writeln(F, Format('R 00 00 %.2x %.2x', [lo(Sct), hi(Sct)]));
+          Inc(I);
+        end;
       end;
     end;
-  end;
 
-  Writeln('rgb2sdas converting ',sourcename,' --> ',sourcename,'.o result: success!');
-  Close(F);
+    Writeln('rgb2sdas converting ',sourcename,' --> ',sourcename,'.o result: success!');
+  finally Close(F); end;
 end.
 
