@@ -90,6 +90,8 @@ routines: dw
 waves: dw
 
 ;; variables
+mute_channels: db
+
 pattern1: dw
 pattern2: dw
 pattern3: dw
@@ -171,6 +173,38 @@ _hUGE_init::
     ld l, a    
     call hUGE_init
     pop bc
+    ret
+
+_hUGE_mute_channel::
+    push bc
+    ld hl, sp+5
+    ld a, [hl-]
+    and 1
+    ld c, a
+    ld b, [hl]
+    call hUGE_mute_channel
+    pop  bc
+    ret
+
+hUGE_mute_channel::
+    ;; B: channel
+    ;; C: enable flag
+    ld e, $fe
+    ld a, b
+    or a
+    jr z, .enable_cut
+.enable_loop:    
+    sla c
+    rlc e
+    dec a
+    jr nz, .enable_loop
+.enable_cut:    
+    ld a, [mute_channels]
+    and e
+    or  c
+    ld [mute_channels], a
+    and c
+    call nz, note_cut
     ret
 
 hUGE_init::
@@ -366,8 +400,6 @@ _update_channel4:
     ;;;;;;;
 
 _playnote1:
-    ;; Call with:
-
     ;; Play a note on channel 1 (square wave)
     ld a, [temp_note_value+1]
     ld [channel_period1], a
@@ -770,7 +802,8 @@ fx_note_cut:
     ; ld a, [tick]
     cp c
     ret nz
-
+    
+note_cut:
     ld hl, rAUD1ENV
     ld a, b
     add a
@@ -1075,6 +1108,7 @@ fx_toneporta:
 
 .subtract:
     sub_from_r16 d, e, c
+    
     bit 7, d ; check for overflow
     jr nz, .set_exact
 
@@ -1131,8 +1165,12 @@ _hUGE_dosound::
     or a
     jp nz, .process_effects
 
-    ;; Note playback
+    ;; check mute
+    ld a, [mute_channels]
+    bit 0, a
+    jp nz, .after_note1
 
+    ;; Note playback
     loadShort pattern1, b, c
     ld de, channel_note1
     call _lookup_note
@@ -1175,6 +1213,12 @@ _hUGE_dosound::
     call _playnote1
 
 .after_note1:
+    ;; check mute
+    ld a, [mute_channels]
+    bit 1, a
+    jp nz, .after_note2
+
+    ;; Note playback
     loadShort pattern2, b, c
     ld de, channel_note2
     call _lookup_note
@@ -1215,6 +1259,11 @@ _hUGE_dosound::
     call _playnote2
 
 .after_note2:
+    ;; check mute
+    ld a, [mute_channels]
+    bit 2, a
+    jp nz, .after_note3
+
     loadShort pattern3, b, c
     ld de, channel_note3
     call _lookup_note
@@ -1282,6 +1331,11 @@ _addr = _addr + 1
     call _playnote3
 
 .after_note3:
+    ;; check mute
+    ld a, [mute_channels]
+    bit 3, a
+    jp nz, .after_note4
+
     loadShort pattern4, b, c
     ld de, channel_note4
     call _lookup_note
