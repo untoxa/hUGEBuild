@@ -13,3 +13,4 @@ __pycache__
 @usage.bat
 *.ihx
 *.noi
+/song/test?

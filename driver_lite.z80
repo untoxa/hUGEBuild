@@ -400,6 +400,14 @@ _playnote2:
     ret
 
 _playnote3:
+    ;; This fixes a gameboy hardware quirk, apparently.
+    ;; The problem is emulated accurately in BGB.
+    ;; https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
+    xor a
+    ld [rAUD3ENA], a
+    ld a, %10000000
+    ld [rAUD3ENA], a
+
     ;; Play a note on channel 3 (waveform)
     ld a, [temp_note_value+1]
     ld [channel_period3], a
@@ -513,7 +521,7 @@ setup_channel_pointer:
 
     ld a, b
     REPT CHANNEL_SIZE_EXPONENT
-        sla a
+        add a
     ENDR
     add d
     ld hl, channels
@@ -754,7 +762,6 @@ fx_pattern_break:
 
     ret
 
-;; TODO: Fix this
 fx_note_cut:
     ;; B: channel
     ;; C: effect parameters
@@ -764,20 +771,21 @@ fx_note_cut:
     cp c
     ret nz
 
-    ;; TODO: Optimize!
-    ld hl, _envelope_registers
+    ld hl, rAUD1ENV
     ld a, b
-    sla a
+    add a
+    add a
+    add b ; multiply by 5
     add_a_to_hl
-    ld a, [hl+]
-    ld d, [hl]
-    ld e, a
-    ld a, 0
-    ld [de], a
-    inc de
-    inc de
-    ld a, %11111111
-    ld [de], a
+    ld [hl], 0
+    ld a, b
+    cp 2
+    ret z ; return early if CH3-- no need to retrigger note
+
+    ;; Retrigger note
+    inc hl
+    inc hl
+    ld [hl], %11111111
     ret
 
 fx_set_volume:
@@ -800,7 +808,6 @@ set_channel_volume:
     cp 3 ; check if it's channel 4
     jr z, set_chn_4_vol
     cp 1 ; check if it's channel 2
-    ld a, c
     jr c, set_chn_1_vol
     jr z, set_chn_2_vol
 set_chn_3_vol:
@@ -822,16 +829,22 @@ set_chn_3_vol:
     ld a, %00100000
     jr .done
 .zero:
-    ld a, 0
+    xor a
 .done:
     ld [rAUD3LEVEL], a
     ret
 set_chn_2_vol:
-    swap a
+    ld a, [rAUD2ENV]
+    and %00001111
+    swap c
+    or c
     ld [rAUD2ENV], a
     ret
 set_chn_1_vol:
-    swap a
+    ld a, [rAUD1ENV]
+    and %00001111
+    swap c
+    or c
     ld [rAUD1ENV], a
     ret
 set_chn_4_vol:
@@ -1062,6 +1075,16 @@ fx_toneporta:
 
 .subtract:
     sub_from_r16 d, e, c
+    bit 7, d ; check for overflow
+    jr nz, .set_exact
+
+    ld a, d
+    cp h
+    jr c, .set_exact
+    jr nz, .done
+    ld a, e
+    cp l
+    jr c, .set_exact
 
     jr .done
 .set_exact:
@@ -1095,8 +1118,8 @@ _setup_instrument_pointer:
     dec a ; Instrument 0 is "no instrument"
 
     ;; Shift left twice to multiply by 4
-    sla a
-    sla a
+    add a
+    add a
 
     add_a_ind_ret_de instruments
 
@@ -1228,7 +1251,7 @@ _hUGE_dosound::
     swap a
     add_a_ind_ret_hl waves
 
-    ld a, 0
+    xor a
     ld [rAUD3ENA], a
 
 _addr = _AUD3WAVERAM
@@ -1402,7 +1425,7 @@ _newrow:
     jr z, _neworder
 
     dec a
-    sla a ;; Multiply the order by 2 (they are words)
+    add a ; multiply order by 2 (they are words)
 
     jr _update_current_order
 
