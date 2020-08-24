@@ -66,6 +66,13 @@ add_a_ind_ret_de: MACRO
     ld d, a
 ENDM
 
+load_de_ind: MACRO
+    ld a, [\1]
+    ld e, a
+    ld a, [\1+1]
+    ld d, a
+ENDM
+
 copy_pointer_from_hl: MACRO
     ld a, [hl+]
     ld [\1], a
@@ -85,7 +92,10 @@ order2: dw
 order3: dw
 order4: dw
 
-instruments: dw
+duty_instruments: dw
+wave_instruments: dw
+noise_instruments: dw
+
 routines: dw
 waves: dw
 
@@ -242,7 +252,10 @@ hUGE_init::
     copy_pointer_from_hl order3
     copy_pointer_from_hl order4
     
-    copy_pointer_from_hl instruments
+    copy_pointer_from_hl duty_instruments
+    copy_pointer_from_hl wave_instruments
+    copy_pointer_from_hl noise_instruments
+    
     copy_pointer_from_hl routines
     copy_pointer_from_hl waves
 
@@ -1155,7 +1168,7 @@ _setup_instrument_pointer:
     add a
     add a
 
-    add_a_ind_ret_de instruments
+    add_a_to_de
 
     rla ; reset the Z flag
     ret
@@ -1177,6 +1190,7 @@ _hUGE_dosound::
     push af
     jr nc, .do_setvol1
 
+    load_de_ind duty_instruments
     call _setup_instrument_pointer
     ld a, [highmask1]
     res 7, a ; Turn off the "initial" flag
@@ -1225,6 +1239,7 @@ _hUGE_dosound::
     push af
     jr nc, .do_setvol2
 
+    load_de_ind duty_instruments
     call _setup_instrument_pointer
     ld a, [highmask2]
     res 7, a ; Turn off the "initial" flag
@@ -1278,6 +1293,7 @@ _hUGE_dosound::
 
     jr nc, .do_setvol3
 
+    load_de_ind wave_instruments
     call _setup_instrument_pointer
     ld a, [highmask3]
     res 7, a ; Turn off the "initial" flag
@@ -1343,6 +1359,7 @@ _addr = _addr + 1
 
     jr nc, .do_setvol4
 
+    load_de_ind noise_instruments
     call _setup_instrument_pointer
     ld a, [highmask4]
     res 7, a ; Turn off the "initial" flag

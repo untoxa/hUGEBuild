@@ -1,0 +1,15 @@
+itNoiseinst1: db 12,43,176,128
+itNoiseinst2: db 0,32,0,128
+itNoiseinst3: db 8,128,147,128
+itNoiseinst4: db 0,65,0,128
+itNoiseinst5: db 0,32,1,128
+itNoiseinst6: db 8,128,240,128
+itNoiseinst7: db 8,128,240,128
+itNoiseinst8: db 8,128,240,128
+itNoiseinst9: db 8,128,240,128
+itNoiseinst10: db 8,128,240,128
+itNoiseinst11: db 8,128,240,128
+itNoiseinst12: db 8,128,240,128
+itNoiseinst13: db 8,128,240,128
+itNoiseinst14: db 8,128,240,128
+itNoiseinst15: db 8,128,240,128

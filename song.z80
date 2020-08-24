@@ -16,8 +16,7 @@ _song_descriptor::
 db TICKS  ; tempo
 dw order_cnt
 dw order1, order2, order3, order4
-
-dw instruments
+dw duty_instruments, wave_instruments, noise_instruments
 dw routines
 dw waves
 
@@ -37,11 +36,17 @@ include "pattern.htt"
 ;; Instruments
 ;;;;;;;;;;;;;;;;
 
-;; Instruments come in blocks.
+duty_instruments:
 
-instruments:
+include "duty_instrument.htt"
 
-include "instrument.htt"
+wave_instruments:
+
+include "wave_instrument.htt"
+
+noise_instruments:
+
+include "noise_instrument.htt"
 
 ;;;;;;;;;;;;;
 ;; Routines
