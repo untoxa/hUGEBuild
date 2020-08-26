@@ -1173,15 +1173,18 @@ _setup_instrument_pointer:
     rla ; reset the Z flag
     ret
 
+checkMute: MACRO
+    ld a, [mute_channels]
+    bit \1, a
+    jp nz, \2
+ENDM
+
 _hUGE_dosound::
     ld a, [tick]
     or a
     jp nz, .process_effects
 
-    ;; check mute
-    ld a, [mute_channels]
-    bit 0, a
-    jp nz, .after_note1
+    checkMute 0, .after_note1
 
     ;; Note playback
     loadShort pattern1, b, c
@@ -1227,10 +1230,7 @@ _hUGE_dosound::
     call _playnote1
 
 .after_note1:
-    ;; check mute
-    ld a, [mute_channels]
-    bit 1, a
-    jp nz, .after_note2
+    checkMute 1, .after_note2
 
     ;; Note playback
     loadShort pattern2, b, c
@@ -1275,9 +1275,7 @@ _hUGE_dosound::
 
 .after_note2:
     ;; check mute
-    ld a, [mute_channels]
-    bit 2, a
-    jp nz, .after_note3
+    checkMute 2, .after_note3
 
     loadShort pattern3, b, c
     ld de, channel_note3
@@ -1347,10 +1345,7 @@ _addr = _addr + 1
     call _playnote3
 
 .after_note3:
-    ;; check mute
-    ld a, [mute_channels]
-    bit 3, a
-    jp nz, .after_note4
+    checkMute 3, .after_note4
 
     loadShort pattern4, b, c
     ld de, channel_note4
@@ -1397,10 +1392,11 @@ _addr = _addr + 1
 
 .after_note4:
     ;; finally just update the tick/order/row values
-    jr process_tick
+    jp process_tick
 
 .process_effects:
     ;; Only do effects if not on tick zero
+    checkMute 0, .after_effect1
 
     loadShort pattern1, b, c
     ld de, channel_note1
@@ -1414,6 +1410,8 @@ _addr = _addr + 1
     call _doeffect
 
 .after_effect1:
+    checkMute 1, .after_effect2
+
     loadShort pattern2, b, c
     ld de, channel_note2
     call _load_note_data
@@ -1426,6 +1424,8 @@ _addr = _addr + 1
     call _doeffect
 
 .after_effect2:
+    checkMute 2, .after_effect3
+
     loadShort pattern3, b, c
     ld de, channel_note3
     call _load_note_data
@@ -1438,6 +1438,8 @@ _addr = _addr + 1
     call _doeffect
 
 .after_effect3:
+    checkMute 3, .after_effect4
+
     loadShort pattern4, b, c
     ld de, channel_note4
     call _load_note_data
@@ -1463,7 +1465,7 @@ process_tick:
     inc a
 
     cp b
-    jp z, _newrow
+    jr z, _newrow
 
     ld [tick], a
     ret
