@@ -8,7 +8,7 @@ dn: MACRO ;; (note, instr, effect)
     db LOW(\3)
 ENDM
 
-SECTION "Song Data", ROM0
+SECTION "Song Data", ROMX
 
 ;; song descriptor
 

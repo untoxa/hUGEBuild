@@ -6,7 +6,7 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, strutils
+  Classes, SysUtils, strutils, math
   { you can add units after this };
 
 type
@@ -399,6 +399,7 @@ var
   WritePos: Word;
   Idx: Integer;
   CODESEG: string;
+  DefaultBank: Integer = 1;
   sourcename, tmp: string;
   
   old_sym, new_sym: string;
@@ -409,7 +410,7 @@ var
 
 begin
   if (ParamCount() < 1) then begin 
-    Writeln('Usage: rgb2sdas [-c<code_section>] [-v] [-e] [-r<symbol1>=<symbol2>] <object_name>');
+    Writeln('Usage: rgb2sdas [-c<code_section>] [-v] [-e] [-r<symbol1>=<symbol2>] [-b<default_bank>] <object_name>');
     Halt;
   end;
   
@@ -429,6 +430,9 @@ begin
       CODESEG:= copy(tmp, 3, length(tmp));
       if length(CODESEG) = 0 then CODESEG:= '_CODE';
       if verbose then writeln('Using CODESEG: ', CODESEG);
+    end else if (CompareText(copy(tmp, 1, 2), '-b') = 0) then begin
+      DefaultBank:= StrToIntDef(copy(tmp, 3, length(tmp)), DefaultBank);
+      if verbose then writeln('Using DefaultBank: ', DefaultBank);
     end else if (CompareText(copy(tmp, 1, 2), '-r') = 0) then begin
       tmp:= copy(tmp, 3, length(tmp));
       Idx:= pos('=', tmp);
@@ -474,7 +478,7 @@ begin
     // output object header
     Writeln(F, 'XL2');
     Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections, idx]));
-    Writeln(F, Format('M %s', [StringReplace(ExtractFileName(ParamStr(1)), '.', '_', [rfReplaceAll])]));
+    Writeln(F, Format('M %s', [StringReplace(ExtractFileName(sourcename), '.', '_', [rfReplaceAll])]));
     Writeln(F, 'O -mgbz80');
 
     // output all imported symbols
@@ -486,7 +490,11 @@ begin
     // output all sections and other symbols
     for Section in RObj.Sections do begin
       if Section.Org = -1 then
-        Writeln(F, Format('A %s size %x flags 0 addr 0', [IfThen(Section.SectType in [ROM0, ROMX], CODESEG, '_DATA'), Section.Size]))
+        case Section.SectType of
+          ROM0: Writeln(F, Format('A %s size %x flags 0 addr 0', [CODESEG, Section.Size]));
+          ROMX: Writeln(F, Format('A _CODE_%d size %x flags 0 addr 0', [max(DefaultBank, Section.Bank), Section.Size]));
+          else  Writeln(F, Format('A _DATA size %x flags 0 addr 0', [Section.Size]));
+        end  
       else Die('absolute sections currently unsupported: %s', [Section.Name]);
 
       for Symbol in RObj.Symbols do
