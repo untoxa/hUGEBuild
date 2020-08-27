@@ -360,15 +360,13 @@ _update_channel:
     ;; Channel in B
     ;; Note tone in DE
 
-    ;; TODO: Turn this into a jump table? Or find some other way to optimize
-    ld a, b
-
-    cp 3
-    jr z, _update_channel4
-    cp 2
-    jr z, _update_channel3
-    cp 1
+;    ld a, b
+    dec b
     jr z, _update_channel2
+    dec b
+    jr z, _update_channel3
+    dec b
+    jr z, _update_channel4
 
 _update_channel1:
     ld hl, highmask1
