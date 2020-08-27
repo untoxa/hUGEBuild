@@ -1,6 +1,4 @@
 #include <gb/gb.h>
-#include <stdio.h>
-#include <gb/console.h>
 #include "hUGEDriver.h"
 
 extern void Intro[];
@@ -8,14 +6,19 @@ extern void Intro[];
 UBYTE joy;
 UBYTE c0 = 0, c1 = 0, c2 = 0, c3 = 0;
 
-const unsigned char * const statstr[2] = {"active", "mute   "};
+const unsigned char pattern1[] = {0x80,0x80,0x40,0x40,0x20,0x20,0x10,0x10,0x08,0x08,0x04,0x04,0x02,0x02,0x01,0x01};
+const unsigned char pattern2[] = {0x00,0x00,0x7E,0x7E,0x40,0x40,0x54,0x54,0x48,0x48,0x54,0x54,0x40,0x40,0x00,0x00};
+const unsigned char map[]      = {0x00,0x20};
 
 void main() {
+    LCDC_REG = 0xD1;
+    BGP_REG  = 0b11100100;
     NR52_REG = 0x80;
     NR51_REG = 0xFF;
     NR50_REG = 0x77;
 
-    puts("ch1: active\nch2: active\nch3: active\nch4: active\n");
+    set_bkg_data(0, 1, pattern1);
+    set_bkg_data(0x20, 1, pattern2);
 
     __critical {
         hUGE_init(Intro);
@@ -26,10 +29,10 @@ void main() {
         wait_vbl_done();
         joy = joypad();
         switch (joy) {
-            case J_UP    : c0 ^= 1; hUGE_mute_channel(0, c0); gotoxy(5, 0); puts(statstr[c0]); waitpadup(); break;
-            case J_DOWN  : c1 ^= 1; hUGE_mute_channel(1, c1); gotoxy(5, 1); puts(statstr[c1]); waitpadup(); break;
-            case J_LEFT  : c2 ^= 1; hUGE_mute_channel(2, c2); gotoxy(5, 2); puts(statstr[c2]); waitpadup(); break;
-            case J_RIGHT : c3 ^= 1; hUGE_mute_channel(3, c3); gotoxy(5, 3); puts(statstr[c3]); waitpadup(); break;
+            case J_UP    : c0 ^= 1; hUGE_mute_channel(0, c0); set_bkg_tiles(0,0,1,1,&map[c0 & 1]); waitpadup(); break;
+            case J_DOWN  : c1 ^= 1; hUGE_mute_channel(1, c1); set_bkg_tiles(1,0,1,1,&map[c1 & 1]); waitpadup(); break;
+            case J_LEFT  : c2 ^= 1; hUGE_mute_channel(2, c2); set_bkg_tiles(2,0,1,1,&map[c2 & 1]); waitpadup(); break;
+            case J_RIGHT : c3 ^= 1; hUGE_mute_channel(3, c3); set_bkg_tiles(3,0,1,1,&map[c3 & 1]); waitpadup(); break;
         }
     }
 }
