@@ -879,6 +879,8 @@ set_channel_volume:
     jr c, set_chn_1_vol
     jr z, set_chn_2_vol
 set_chn_3_vol:
+    retMute 2
+    
     ;; "Quantize" the more finely grained volume control down to one of 4 values.
     ld a, c
     cp 10
@@ -902,6 +904,8 @@ set_chn_3_vol:
     ld [rAUD3LEVEL], a
     ret
 set_chn_2_vol:
+    retMute 1
+    
     ld a, [rAUD2ENV]
     and %00001111
     swap c
@@ -909,6 +913,8 @@ set_chn_2_vol:
     ld [rAUD2ENV], a
     ret
 set_chn_1_vol:
+    retMute 0
+    
     ld a, [rAUD1ENV]
     and %00001111
     swap c
@@ -916,6 +922,8 @@ set_chn_1_vol:
     ld [rAUD1ENV], a
     ret
 set_chn_4_vol:
+    retMute 3
+    
     swap c
     ld a, c
     ld [rAUD4ENV], a
