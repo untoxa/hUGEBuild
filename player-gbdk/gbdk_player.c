@@ -29,10 +29,10 @@ void main() {
         wait_vbl_done();
         joy = joypad();
         switch (joy) {
-            case J_UP    : c0 ^= 1; hUGE_mute_channel(0, c0); set_bkg_tiles(0,0,1,1,&map[c0 & 1]); waitpadup(); break;
-            case J_DOWN  : c1 ^= 1; hUGE_mute_channel(1, c1); set_bkg_tiles(1,0,1,1,&map[c1 & 1]); waitpadup(); break;
-            case J_LEFT  : c2 ^= 1; hUGE_mute_channel(2, c2); set_bkg_tiles(2,0,1,1,&map[c2 & 1]); waitpadup(); break;
-            case J_RIGHT : c3 ^= 1; hUGE_mute_channel(3, c3); set_bkg_tiles(3,0,1,1,&map[c3 & 1]); waitpadup(); break;
+            case J_UP    : c0 ^= 1; hUGE_mute_channel(HT_CH1, c0); set_bkg_tiles(0,0,1,1,&map[c0 & 1]); waitpadup(); break;
+            case J_DOWN  : c1 ^= 1; hUGE_mute_channel(HT_CH2, c1); set_bkg_tiles(1,0,1,1,&map[c1 & 1]); waitpadup(); break;
+            case J_LEFT  : c2 ^= 1; hUGE_mute_channel(HT_CH3, c2); set_bkg_tiles(2,0,1,1,&map[c2 & 1]); waitpadup(); break;
+            case J_RIGHT : c3 ^= 1; hUGE_mute_channel(HT_CH4, c3); set_bkg_tiles(3,0,1,1,&map[c3 & 1]); waitpadup(); break;
         }
     }
 }

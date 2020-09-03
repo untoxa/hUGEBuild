@@ -7,7 +7,9 @@ void hUGE_init(void * song);
 // driver routine
 void hUGE_dosound();
 
-// mute/unmute channel; ch: is a channel number 0..3, mute: 1 to mute, 0 to unmute.
-void hUGE_mute_channel(unsigned char ch, unsigned char mute);
+enum hUGE_channel_t {HT_CH1 = 0, HT_CH2, HT_CH3, HT_CH4};
+enum hUGE_mute_t    {HT_CH_PLAY = 0, HT_CH_MUTE};
+
+void hUGE_mute_channel(enum hUGE_channel_t ch, enum hUGE_mute_t mute);
 
 #endif
