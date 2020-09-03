@@ -32,6 +32,7 @@ rgb2sdas is a utility that converts RGBDS object files to SDAS object files. unf
 		-e -- export all symbols, including local
 		-r -- renames symbol symbol1 to symbol2
 		-c -- codeseg area name
+		-b -- default bank number for ROMX sections, -b0 forces _CODE section
 
 	example 1; converting the driver object:
 		rgb2sdas driver_lite.obj

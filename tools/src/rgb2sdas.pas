@@ -492,7 +492,8 @@ begin
       if Section.Org = -1 then
         case Section.SectType of
           ROM0: Writeln(F, Format('A %s size %x flags 0 addr 0', [CODESEG, Section.Size]));
-          ROMX: Writeln(F, Format('A _CODE_%d size %x flags 0 addr 0', [max(DefaultBank, Section.Bank), Section.Size]));
+          ROMX: if (DefaultBank = 0) then Writeln(F, Format('A %s size %x flags 0 addr 0', [CODESEG, Section.Size]))
+                                     else Writeln(F, Format('A _CODE_%d size %x flags 0 addr 0', [max(DefaultBank, Section.Bank), Section.Size]));
           else  Writeln(F, Format('A _DATA size %x flags 0 addr 0', [Section.Size]));
         end  
       else Die('absolute sections currently unsupported: %s', [Section.Name]);
