@@ -696,6 +696,20 @@ fx_vol_slide:
 
     ;; free registers: A, D, E, H, L
 
+    ;; check channel mute
+    ld d, 1
+    ld a, b
+    or a
+    jr z, .cont
+.loop:
+    sla d
+    dec a
+    jr nz, .loop
+.cont:    
+    ld a, [mute_channels]
+    and d
+    ret nz
+
     ld d, 0
     call setup_channel_pointer
     ld a, [hl+]
@@ -857,6 +871,20 @@ fx_note_cut:
     cp c
     ret nz
     
+    ;; check channel mute
+    ld d, 1
+    ld a, b
+    or a
+    jr z, .cont
+.loop:
+    sla d
+    dec a
+    jr nz, .loop
+.cont:    
+    ld a, [mute_channels]
+    and d
+    ret nz
+
 note_cut:
     ld hl, rAUD1ENV
     ld a, b
