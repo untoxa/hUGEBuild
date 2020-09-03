@@ -594,6 +594,8 @@ setup_channel_pointer:
 
 fx_set_master_volume:
     ret nz
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -611,6 +613,8 @@ fx_set_master_volume:
     ret
 
 fx_call_routine:
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -634,6 +638,8 @@ fx_call_routine:
 fx_set_pan:
     ret nz
 
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -649,6 +655,8 @@ fx_set_pan:
 fx_set_duty:
     ret nz
 
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -681,6 +689,8 @@ fx_vol_slide:
     ;; Might replace this effect with something different if a new effect is
     ;; ever needed.
 
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -745,6 +755,8 @@ _envelope_registers:
     dw rAUD4ENV
 
 fx_note_delay:
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -797,6 +809,8 @@ _play_note_routines:
 fx_set_speed:
     ret nz
 
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -806,6 +820,8 @@ fx_set_speed:
     ret
 
 fx_pos_jump:
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -819,6 +835,8 @@ fx_pos_jump:
     ret
 
 fx_pattern_break:
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -830,11 +848,12 @@ fx_pattern_break:
     ret
 
 fx_note_cut:
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
     ;; free registers: A, D, E, H, L
-    ; ld a, [tick]
     cp c
     ret nz
     
@@ -859,6 +878,8 @@ note_cut:
 fx_set_volume:
     ret nz ;; Return if we're not on tick zero.
 
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -931,6 +952,8 @@ set_chn_4_vol:
 
 fx_vibrato:
     ret z
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -978,6 +1001,8 @@ fx_vibrato:
 
 fx_arpeggio:
     ret z
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -1031,6 +1056,8 @@ fx_arpeggio:
 
 fx_porta_up:
     ret z
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -1056,6 +1083,8 @@ fx_porta_up:
 ;; to find a way to compare against effect code.
 fx_porta_down:
     ret z
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
@@ -1099,6 +1128,8 @@ fx_toneporta:
     ret_dont_call_playnote
 
 .do_toneporta:
+    ;; A: tick
+    ;; ZF: (tick == 0)
     ;; B: channel
     ;; C: effect parameters
 
