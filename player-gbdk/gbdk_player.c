@@ -1,7 +1,7 @@
 #include <gb/gb.h>
 #include "hUGEDriver.h"
 
-extern void Intro[];
+extern const hUGESong_t Intro;
 
 UBYTE joy;
 UBYTE c0 = 0, c1 = 0, c2 = 0, c3 = 0;
@@ -21,7 +21,7 @@ void main() {
     set_bkg_data(0x20, 1, pattern2);
 
     __critical {
-        hUGE_init(Intro);
+        hUGE_init(&Intro);
         add_VBL(hUGE_dosound);
     }
         
