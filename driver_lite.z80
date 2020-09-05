@@ -638,7 +638,7 @@ fx_call_routine:
     push af
     inc sp
     push bc
-    or a ; compatimility mode
+    or a ; set zero flag if tick 0 for compatibility
     call .call_hl
     add sp, 3
     ret
