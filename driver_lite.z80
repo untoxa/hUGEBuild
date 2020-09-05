@@ -622,17 +622,28 @@ fx_call_routine:
 
     ;; Routines are 16 bytes. Shift left to multiply by 16, then
     ;; jump to that location.
-
     load_hl_ind routines
+    ld a, h
+    or l
+    ret z
+    
     ld a, c
-    swap a
-    ; and %11110000 is this necessary?
-    ; sla c
-    ; sla c
-    ; sla c
-    ; sla c
-    ; ld a, c
+    add a
     add_a_to_hl
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a
+    
+    ld a, [tick]
+    push af
+    inc sp
+    push bc
+    or a ; compatimility mode
+    call .call_hl
+    add sp, 3
+    ret
+    
+.call_hl:
     jp hl
 
 fx_set_pan:

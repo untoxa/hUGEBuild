@@ -52,13 +52,11 @@ include "noise_instrument.htt"
 ;; Routines
 ;;;;;;;;;;;;;
 
-routines:
-
 loadRoutine: MACRO
 __hUGE_Routine_\1:
 include "routine\1.htt"
 __end_hUGE_Routine_\1:
-ds 16 - (__end_hUGE_Routine_\1 - __hUGE_Routine_\1)
+  ret
 ENDM
 
   loadRoutine 0
@@ -77,7 +75,10 @@ ENDM
   loadRoutine 13
   loadRoutine 14
   loadRoutine 15
-  ret
+
+routines:
+dw __hUGE_Routine_0, __hUGE_Routine_1, __hUGE_Routine_2, __hUGE_Routine_3, __hUGE_Routine_4, __hUGE_Routine_5, __hUGE_Routine_6, __hUGE_Routine_7
+dw __hUGE_Routine_8, __hUGE_Routine_9, __hUGE_Routine_10, __hUGE_Routine_11, __hUGE_Routine_12, __hUGE_Routine_13, __hUGE_Routine_14, __hUGE_Routine_15
 
 ;;;;;;;;;
 ;; Waves
