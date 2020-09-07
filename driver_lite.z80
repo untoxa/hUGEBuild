@@ -628,6 +628,7 @@ fx_call_routine:
     ret z
     
     ld a, c
+    and $0f
     add a
     add_a_to_hl
     ld a, [hl+]
