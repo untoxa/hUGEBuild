@@ -112,7 +112,6 @@ current_order: db
 next_order: db
 row_break: db
 
-;; TODO: Find some way to get rid of this thing.
 temp_note_value: dw
 row: db
 tick: db
@@ -172,15 +171,14 @@ highmask4: db
 
 _end_vars:
 
-; Initialization
-SECTION "sound driver", ROM0
+SECTION "Sound Driver", ROM0
 
 _hUGE_init::
     push bc
     ld hl, sp+4
     ld a, [hl+]
     ld h, [hl]
-    ld l, a    
+    ld l, a
     call hUGE_init
     pop bc
     ret
@@ -203,12 +201,12 @@ hUGE_mute_channel::
     ld a, b
     or a
     jr z, .enable_cut
-.enable_loop:    
+.enable_loop:
     sla c
     rlc e
     dec a
     jr nz, .enable_loop
-.enable_cut:    
+.enable_cut:
     ld a, [mute_channels]
     and e
     or  c
@@ -251,18 +249,18 @@ hUGE_init::
     copy_pointer_from_hl order2
     copy_pointer_from_hl order3
     copy_pointer_from_hl order4
-    
+
     copy_pointer_from_hl duty_instruments
     copy_pointer_from_hl wave_instruments
     copy_pointer_from_hl noise_instruments
-    
+
     copy_pointer_from_hl routines
     copy_pointer_from_hl waves
 
     ld a, [current_order]
     ld c, a ;; Current order index
     call _refresh_patterns
-    
+
     ret
 
 _refresh_patterns:
@@ -335,9 +333,7 @@ _lookup_note:
     ret nc
 
     ;; Store the loaded note value in channel_noteX
-    ld h, d
-    ld l, e
-    ld [hl], a
+    ld [de], a
 
 _convert_note:
     ;; Call with:
@@ -554,7 +550,6 @@ _doeffect:
 
     ld b, e
     ld a, [tick]
-    ; cp 0
     or a ; We can return right off the bat if it's tick zero
     jp hl
 
@@ -626,7 +621,7 @@ fx_call_routine:
     ld a, h
     or l
     ret z
-    
+
     ld a, c
     and $0f
     add a
@@ -634,7 +629,7 @@ fx_call_routine:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    
+
     ld a, [tick]
     push af
     inc sp
@@ -643,7 +638,7 @@ fx_call_routine:
     call .call_hl
     add sp, 3
     ret
-    
+
 .call_hl:
     jp hl
 
@@ -717,7 +712,7 @@ fx_vol_slide:
     sla d
     dec a
     jr nz, .loop
-.cont:    
+.cont:
     ld a, [mute_channels]
     and d
     ret nz
@@ -882,7 +877,7 @@ fx_note_cut:
     ;; free registers: A, D, E, H, L
     cp c
     ret nz
-    
+
     ;; check channel mute
     ld d, 1
     ld a, b
@@ -892,7 +887,7 @@ fx_note_cut:
     sla d
     dec a
     jr nz, .loop
-.cont:    
+.cont:
     ld a, [mute_channels]
     and d
     ret nz
@@ -941,7 +936,7 @@ set_channel_volume:
     jr z, set_chn_2_vol
 set_chn_3_vol:
     retMute 2
-    
+
     ;; "Quantize" the more finely grained volume control down to one of 4 values.
     ld a, c
     cp 10
@@ -966,7 +961,7 @@ set_chn_3_vol:
     ret
 set_chn_2_vol:
     retMute 1
-    
+
     ld a, [rAUD2ENV]
     and %00001111
     swap c
@@ -975,7 +970,7 @@ set_chn_2_vol:
     ret
 set_chn_1_vol:
     retMute 0
-    
+
     ld a, [rAUD1ENV]
     and %00001111
     swap c
@@ -984,7 +979,7 @@ set_chn_1_vol:
     ret
 set_chn_4_vol:
     retMute 3
-    
+
     swap c
     ld a, c
     ld [rAUD4ENV], a
@@ -1014,23 +1009,23 @@ fx_vibrato:
     swap a
     ld d, a
 
+    ;; TODO: Fix this...
     ;; If it's the last tick, then reset the tone to its normal value so we
     ;; don't screw the tone when the vibrato gets turned off!
-    ld a, [tick]
+    ld a, [ticks_per_row]
     dec a
     ld e, a
-    ld a, [counter] ; Probably should change to some constantly ticking thing
+    ld a, [tick]
+    inc a
     cp e
-    jr z, .restore
-    ; srl a ; divide counter by two, because the fastest is just too fast!
-    and d
     ld a, [hl-]
-    jr z, .go_up
+    jr nc, .go_up
+
 .restore:
     call _convert_note
     jr .finish_vibrato
 .go_up:
-    call _convert_note ; TODO: Find a way to grab it directly rather than recompute
+    call _convert_note
     ld a, c
     and %00001111
     add_a_to_hl
@@ -1175,9 +1170,6 @@ fx_toneporta:
 
     ;; free registers: A, D, E, H, L
 
-    ;; TODO: Optimize. This usage of the stack isn't great but IMO it's
-    ;; better than using the stack hack which forces all effects to screw with
-    ;; pushing and popping. Most effects won't need to do this.
     ld d, 0
     call setup_channel_pointer
     push hl
@@ -1222,7 +1214,7 @@ fx_toneporta:
 
 .subtract:
     sub_from_r16 d, e, c
-    
+
     bit 7, d ; check for overflow
     jr nz, .set_exact
 
@@ -1379,7 +1371,6 @@ _hUGE_dosound::
     ld de, channel_note3
     call _lookup_note
 
-    ;; Any reason not to do this here?
     ld a, h
     ld [temp_note_value], a
     ld a, l
@@ -1499,7 +1490,6 @@ _addr = _addr + 1
     checkMute 0, .after_effect1
 
     loadShort pattern1, b, c
-    ld de, channel_note1
     call _load_note_data
 
     ld a, c
@@ -1513,7 +1503,6 @@ _addr = _addr + 1
     checkMute 1, .after_effect2
 
     loadShort pattern2, b, c
-    ld de, channel_note2
     call _load_note_data
 
     ld a, c
@@ -1527,7 +1516,6 @@ _addr = _addr + 1
     checkMute 2, .after_effect3
 
     loadShort pattern3, b, c
-    ld de, channel_note3
     call _load_note_data
 
     ld a, c
@@ -1541,7 +1529,6 @@ _addr = _addr + 1
     checkMute 3, .after_effect4
 
     loadShort pattern4, b, c
-    ld de, channel_note4
     call _load_note_data
 
     ld a, c
@@ -1632,6 +1619,9 @@ _noreset:
     ld a, b
     ld [row], a
 
+    IF DEF(PREVIEW_MODE)
+    db $fd
+    ENDC
     ret
 
 note_table:
