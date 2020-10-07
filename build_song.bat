@@ -6,4 +6,4 @@
 @if not exist %OBJ% mkdir %OBJ%
 @if exist %OBJ%%PROJ%.obj del %OBJ%%PROJ%.obj
 
-tools\rgbasm -i%PROJ% -o%OBJ%%PROJ%.obj %PROJ%.z80
+tools\rgbasm -isong/asm/%PROJ% -o%OBJ%%PROJ%.obj %PROJ%.z80

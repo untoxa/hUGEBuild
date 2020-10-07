@@ -1,6 +1,3 @@
-;; hUGETracker playback routine
-;; Written by SuperDisk 2019
-
 include "include/hardware.inc"
 include "include/constants.inc"
 
@@ -38,6 +35,7 @@ ret_dont_call_playnote: MACRO
     jp hl
 ENDM
 
+
 add_a_ind_ret_hl: MACRO
     ld hl, \1
     add [hl]
@@ -54,16 +52,6 @@ load_hl_ind: MACRO
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-ENDM
-
-add_a_ind_ret_de: MACRO
-    ld e, a
-    ld a, [\1]
-    add e
-    ld e, a
-    ld a, [\1+1]
-    adc 0
-    ld d, a
 ENDM
 
 load_de_ind: MACRO
@@ -217,6 +205,7 @@ hUGE_mute_channel::
 
 hUGE_init::
     push hl
+    if !DEF(PREVIEW_MODE)
     ;; Zero some ram
     ld c, _end_vars - _start_vars
     ld hl, _start_vars
@@ -225,6 +214,7 @@ hUGE_init::
     ld [hl+], a
     dec c
     jp nz, .fill_loop
+    ENDC
 
     ld a, %11110000
     ld [envelope1], a
@@ -351,6 +341,46 @@ _convert_note:
     scf
     ret
 
+_convert_ch4_note:
+    ;; Call with:
+    ;; Note number in A
+    ;; Stores polynomial counter in A
+    ;; Free: HL
+
+    ;; Invert the order of the numbers
+    add 192 ; (255 - 63)
+    cpl
+
+    ;; Thanks to RichardULZ for this formula
+    ;; https://docs.google.com/spreadsheets/d/1O9OTAHgLk1SUt972w88uVHp44w7HKEbS/edit#gid=75028951
+    ; if A > 7 then begin
+    ;   B := (A-4) div 4;
+    ;   C := (A mod 4)+4;
+    ;   A := (C or (B shl 4))
+    ; end;
+
+    ; if A < 7 then return
+    cp 7
+    ret c
+
+    ld h, a
+
+    ; B := (A-4) div 4;
+    sub 4
+    srl a
+    srl a
+    ld l, a
+
+    ; C := (A mod 4)+4;
+    ld a, h
+    and 3
+    add 4
+
+    ; A := (C or (B shl 4))
+    swap l
+    or l
+    ret
+
 _update_channel:
     ;; Call with:
     ;; Channel in B
@@ -376,8 +406,6 @@ _update_channel1:
     ld a, e
     ld [rAUD1LOW], a
     ld a, d
-    ; or [hl]
-    ; and %01111111
     ld [rAUD1HIGH], a
     ret
 _update_channel2:
@@ -387,8 +415,6 @@ _update_channel2:
     ld a, e
     ld [rAUD2LOW], a
     ld a, d
-    ; or [hl]
-    ; and %01111111
     ld [rAUD2HIGH], a
     ret
 _update_channel3:
@@ -398,26 +424,18 @@ _update_channel3:
     ld a, e
     ld [rAUD3LOW], a
     ld a, d
-    ; or [hl]
-    ; and %01111111
     ld [rAUD3HIGH], a
     ret
 _update_channel4:
     retMute 3
-    
-    ld hl, highmask4
-    call _quantize_channel4_note
+
+    ; ld hl, highmask4
+    ld a, e
+    call _convert_ch4_note
     ld [rAUD4POLY], a
-    ; ld a, [hl]
-    ; and %01111111
-    ld a, 0
+    xor a
     ld [rAUD4GO], a
     ret
-
-    ;;;;;;;
-    ;; Note playing routines. Need to either consolidate these or find some
-    ;; better way of doing effects that happen on the first tick.
-    ;;;;;;;
 
 _playnote1:
     retMute 0
@@ -483,48 +501,16 @@ _playnote3:
 
 _playnote4:
     retMute 3
-    
+
     ;; Play a "note" on channel 4 (noise)
-
-    ld a, [temp_note_value+1]
-    ld [channel_period4], a
-    ld e, a
-
     ld a, [temp_note_value]
     ld [channel_period4+1], a
-    ld d, a
-
-    call _quantize_channel4_note
-    ld b, a
-
-    ld a, [rAUD4POLY]
-    or b
     ld [rAUD4POLY], a
 
     ;; Get the highmask and apply it.
-    ld hl, highmask4
-    or [hl]
+    ld a, [highmask4]
     ld [rAUD4GO], a
 
-    ret
-
-_quantize_channel4_note:
-    ;; Shift the "note value" right by 7 to get a spread from 0 to 15.
-    ;; Keep just the upmost bit of the lower byte
-    ld a, e
-    and %10000000
-    rla
-    ld c, a
-
-    ;; Keep the entire upper byte (but it's never the full 8 bits)
-    ld a, d
-    rla
-    or c
-
-    ld e, a
-    ld a, $F
-    sub e
-    swap a
     ret
 
 _doeffect:
@@ -696,6 +682,7 @@ fx_vol_slide:
     ;; Might replace this effect with something different if a new effect is
     ;; ever needed.
 
+
     ;; A: tick
     ;; ZF: (tick == 0)
     ;; B: channel
@@ -703,6 +690,7 @@ fx_vol_slide:
 
     ;; free registers: A, D, E, H, L
 
+    ;; Todo
     ;; check channel mute
     ld d, 1
     ld a, b
@@ -812,7 +800,7 @@ fx_note_delay:
     ld a, [hl]
     ld [temp_note_value+1], a
 
-    ;; Generalize this somehow?
+    ;; TODO: Generalize this somehow?
 
     ld hl, _play_note_routines
     ld a, b
@@ -1009,7 +997,6 @@ fx_vibrato:
     swap a
     ld d, a
 
-    ;; TODO: Fix this...
     ;; If it's the last tick, then reset the tone to its normal value so we
     ;; don't screw the tone when the vibrato gets turned off!
     ld a, [ticks_per_row]
@@ -1245,6 +1232,20 @@ loadShort: MACRO
     ld \2, a
 ENDM
 
+;; TODO: Find some way to de-duplicate this code!
+_setup_instrument_pointer_ch4:
+    ;; Call with:
+    ;; Instrument/High nibble of effect in B
+    ;; Stores whether the instrument was real in the Z flag
+    ;; Stores the instrument pointer in DE
+    ld a, b
+    and %11110000
+    swap a
+    ret z ; If there's no instrument, then return early.
+
+    dec a ; Instrument 0 is "no instrument"
+    add a
+    jp _setup_instrument_pointer.finish
 _setup_instrument_pointer:
     ;; Call with:
     ;; Instrument/High nibble of effect in B
@@ -1256,7 +1257,7 @@ _setup_instrument_pointer:
     ret z ; If there's no instrument, then return early.
 
     dec a ; Instrument 0 is "no instrument"
-
+.finish:
     ;; Shift left twice to multiply by 4
     add a
     add a
@@ -1430,53 +1431,60 @@ _addr = _addr + 1
     call _doeffect
 
     pop af
-
     jr nc, .after_note3
 
     call _playnote3
 
 .after_note3:
     loadShort pattern4, b, c
-    ld de, channel_note4
-    call _lookup_note
+    call _load_note_data
+    ld [channel_note4], a
+    cp LAST_NOTE
     push af
-
     jr nc, .do_setvol4
 
-    load_de_ind noise_instruments
+    call _convert_ch4_note
+    ld [temp_note_value], a
+
+    ld de, 0
     call _setup_instrument_pointer
+
     ld a, [highmask4]
     res 7, a ; Turn off the "initial" flag
     jr z, .write_mask4
 
-    checkMute 3, .do_setvol4
+    checkMute 3, .do_setvol4 ; TODO: move this?
 
-    ld a, [de]
-    inc de
-    ld [rAUD4LEN], a
-    ld a, [de]
-    inc de
+    load_hl_ind noise_instruments
+    sla e
+    add hl, de
+
+    ld a, [hl+]
     ld [rAUD4ENV], a
-    ld a, [de]
-    ld [rAUD4POLY], a
-    inc de
-    ld a, [de]
-    ld [rAUD4GO], a
 
+    ld a, [hl]
+    and %00111111
+    ld [rAUD4LEN], a
+
+    ld a, [temp_note_value]
+    ld d, a
+    ld a, [hl]
+    and %10000000
+    swap a
+    or d
+    ld [temp_note_value], a
+
+    ld a, [hl]
+    and %01000000
+    or  %10000000
 .write_mask4:
     ld [highmask4], a
 
 .do_setvol4:
-    ld a, h
-    ld [temp_note_value], a
-    ld a, l
-    ld [temp_note_value+1], a
-
     ld e, 3
     call _doeffect
 
     pop af
-
     jr nc, .after_note4
 
     call _playnote4
@@ -1530,7 +1538,40 @@ _addr = _addr + 1
 
     loadShort pattern4, b, c
     call _load_note_data
+    cp LAST_NOTE
+    jp nc, .done_macro
+    ld h, a
 
+    load_de_ind noise_instruments
+    call _setup_instrument_pointer_ch4
+    jr z, .done_macro ; No instrument, thus no macro
+
+    ld a, [tick]
+    cp 7
+    jp nc, .done_macro
+
+    inc de
+    push de
+    push de
+
+    add_a_to_de
+    ld a, [de]
+    add h
+    call _convert_ch4_note
+    ld d, a
+    pop hl
+    ld a, [hl]
+    and %10000000
+    swap a
+    or d
+    ld [rAUD4POLY], a
+
+    pop de
+    ld a, [de]
+    and %01000000
+    ld [rAUD4GO], a
+
+.done_macro:
     ld a, c
     cp 0
     jr z, .after_effect4

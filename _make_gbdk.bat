@@ -6,9 +6,8 @@
 @set SRC=player-gbdk\
 @set TGT=rom\
 
-@set DRV=driver_lite
+@set DRV=hUGEDriver
 @set MOD=song
-@rem @set CVTFLAGS=-e
 
 @echo Cleanup...
 
@@ -22,16 +21,12 @@
 
 @echo Assembling song and driver...
 
-tools\rgbasm -o%OBJ%%DRV%.obj %DRV%.z80
+tools\rgbasm -o%OBJ%%DRV%.obj driver.z80
 tools\rgb2sdas %CVTFLAGS% %OBJ%%DRV%.obj
 @set LFILES=%LFILES% %OBJ%%DRV%.obj.o
 
-tools\rgbasm -i%MOD% -o%OBJ%%MOD%.obj %MOD%.z80
-tools\rgb2sdas %CVTFLAGS% -b1 -r_song_descriptor=_Intro %OBJ%%MOD%.obj
-@set LFILES=%LFILES% %OBJ%%MOD%.obj.o
-
 @echo COMPILING WITH GBDK-2020...
 
-%GBDK%\bin\lcc -o %TGT%%PROJ%.gb %SRC%%PROJ%.c %LFILES%
+%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -o %TGT%%PROJ%.gb %SRC%%PROJ%.c song/C/%MOD%.c %LFILES%
 
 @echo DONE!

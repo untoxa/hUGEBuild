@@ -1,0 +1,15 @@
+itNoiseinst1: db 240,0,0,0,0,0,0,0
+itNoiseinst2: db 240,0,0,0,0,0,0,0
+itNoiseinst3: db 240,0,0,0,0,0,0,0
+itNoiseinst4: db 162,73,0,0,0,0,0,0
+itNoiseinst5: db 240,0,0,0,0,0,0,0
+itNoiseinst6: db 240,0,0,0,0,0,0,0
+itNoiseinst7: db 240,0,0,0,0,0,0,0
+itNoiseinst8: db 129,64,0,0,0,0,0,0
+itNoiseinst9: db 144,126,0,0,0,0,0,0
+itNoiseinst10: db 240,0,0,0,0,0,0,0
+itNoiseinst11: db 240,0,0,0,0,0,0,0
+itNoiseinst12: db 240,0,0,0,0,0,0,0
+itNoiseinst13: db 240,0,0,0,0,0,0,0
+itNoiseinst14: db 240,0,0,0,0,0,0,0
+itNoiseinst15: db 240,0,0,0,0,0,0,0

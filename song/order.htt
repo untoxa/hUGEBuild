@@ -1,5 +1,0 @@
-order_cnt: db 6
-order1: dw P1,P1,P1,P0
-order2: dw P0,P0,P4,P0
-order3: dw P0,P2,P3,P0
-order4: dw P0,P0,P5,P0

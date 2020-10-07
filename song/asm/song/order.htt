@@ -1,0 +1,5 @@
+order_cnt: db 16
+order1: dw P2,P6,P10,P11,P16,P16,P16,P16,P0
+order2: dw P1,P7,P3,P13,P15,P17,P18,P19,P0
+order3: dw P0,P4,P8,P12,P8,P8,P8,P8,P0
+order4: dw P0,P5,P9,P14,P9,P9,P9,P9,P0

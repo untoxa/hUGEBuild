@@ -1,10 +1,10 @@
-itSquareinst1: db 12,43,176,128
-itSquareinst2: db 0,32,0,128
-itSquareinst3: db 8,128,147,128
-itSquareinst4: db 0,65,0,128
-itSquareinst5: db 0,32,1,128
-itSquareinst6: db 8,128,240,128
-itSquareinst7: db 8,128,240,128
+itSquareinst1: db 8,128,128,128
+itSquareinst2: db 8,128,32,128
+itSquareinst3: db 8,64,160,128
+itSquareinst4: db 8,64,48,128
+itSquareinst5: db 8,128,240,128
+itSquareinst6: db 8,64,144,128
+itSquareinst7: db 8,64,48,128
 itSquareinst8: db 8,128,240,128
 itSquareinst9: db 8,128,240,128
 itSquareinst10: db 8,128,240,128
