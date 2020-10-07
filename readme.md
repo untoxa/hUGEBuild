@@ -12,14 +12,14 @@ This refactored driver has several advantages:
 2. write a music modute in it, press "export .GB" button
 3. clone this repo
 4. copy *.htt files from hUGETracker\hUGEDriver\ folder to \song folder of this repo
-5. _make_gbdk.bat compiles a player using SDCC, _make_rgbds.bat compiles a player using RGBDS; rom-files will be located in the \rom folder; you must have more or less new SDCC, in case you want to compile gbdk_player.gb, because bat-scripts are written for it.
-6. objects that might be linked with your homebrew software are located in the \build folder: driver_lite.obj song.obj in RGBDS format, driver_lite.obj.o song.obj.o in SDAS format for use with SDCC.
+5. _make_gbdk.bat compiles a player using GBDK-2020, _make_rgbds.bat compiles a player using RGBDS; rom-files will be located in the \rom folder; you must have more GBDK-2020 v4.0, in case you want to compile gbdk_player.gb, because bat-scripts are written for it.
+6. objects that might be linked with your homebrew software are located in the \build folder: hUGEDriver.obj song.obj in RGBDS format, hUGEDriver.obj.o in SDAS format for use with GBDK.
 
 # Notes
 
-1. SDCC header file for the driver is here: \player-gbdk\hUGEDriver.h, example of usage is gbdk_player.c
-2. New SDCC must be used, at least #11800. I suggest to take snapshot from here: http://sdcc.sourceforge.net/snap.php You may take GBDK-2020 library to link with. 
-3. If you need to use this with pure GBDK-2020 - no problem, just compile a song and a driver into objects and convert them with rgb2sdas utility. Just add converted objects to your project and use functions declared in hUGEDriver.h in your homebrew.
+1. C header file for the driver is here: \player-gbdk\hUGEDriver.h, example of usage is gbdk_player.c
+2. GBDK-2020 v4.0 is required. 
+3. If you need to use this with GBDK-2020 project - no problem, just compile a driver into the object and convert it with rgb2sdas utility. Just add converted object to your project and use functions declared in hUGEDriver.h in your homebrew. Also export your song module to C source file using hUGETracker and include it too.
 
 # rgb2sdas
 
@@ -39,8 +39,3 @@ rgb2sdas is a utility that converts RGBDS object files to SDAS object files. unf
 
 	example 2; converting the song object, place it into bank 1, rename symbol to Intro:
 		rgb2sdas -c_CODE_1 -r_song_descriptor=_Intro song.obj
-
-
-# todo
-
-1. try to bring hUGETracker original project to life: it has a newer driver, with more functions, also a better UI, but is completely unusable because it is simply not working when compiled from the sources, and there are no more or less stable pre-compiled binaries of it to use.
