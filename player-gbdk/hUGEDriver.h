@@ -78,7 +78,7 @@
 #define LAST_NOTE 72
 #define ___ 90
 
-typedef void (*hUGERoutine_t)(unsigned char ch, unsigned char param, unsigned char tick);
+typedef void (*hUGERoutine_t)(unsigned char param, unsigned char ch, unsigned char tick);
 
 typedef struct hUGESong_t {
   unsigned char tempo;
@@ -99,5 +99,13 @@ enum hUGE_channel_t {HT_CH1 = 0, HT_CH2, HT_CH3, HT_CH4};
 enum hUGE_mute_t    {HT_CH_PLAY = 0, HT_CH_MUTE};
 
 void hUGE_mute_channel(enum hUGE_channel_t ch, enum hUGE_mute_t mute);
+
+#define HT_MASK_CH1 (1 << HT_CH1)
+#define HT_MASK_CH2 (1 << HT_CH2)
+#define HT_MASK_CH3 (1 << HT_CH3)
+#define HT_MASK_CH4 (1 << HT_CH4)
+#define HT_MASK_ALL (HT_MASK_CH1 | HT_MASK_CH2 | HT_MASK_CH3 | HT_MASK_CH4)
+
+void hUGE_enable_channels(unsigned char mask);
 
 #endif
