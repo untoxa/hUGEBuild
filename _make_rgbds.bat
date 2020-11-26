@@ -11,9 +11,9 @@
 @if exist %OBJ%%PROJ%.obj del %OBJ%%PROJ%.obj
 @if not exist %TGT% mkdir %TGT%
 
-tools\rgbasm -E -h -o%OBJ%hUGEDriver.obj driver.z80
-tools\rgbasm -isong/asm/%SONG% -o%OBJ%%SONG%.obj song.z80
-tools\rgbasm -h -o%OBJ%%PROJ%.obj player-rgbds\%PROJ%.z80
+tools\rgbasm -E -h -o%OBJ%hUGEDriver.obj hUGEDriver.asm
+tools\rgbasm -isong/asm/%SONG% -o%OBJ%%SONG%.obj song.asm
+tools\rgbasm -h -o%OBJ%%PROJ%.obj player-rgbds\%PROJ%.asm
 
 tools\rgblink -n%TGT%%PROJ%.sym -o%TGT%%PROJ%.gb %OBJ%%PROJ%.obj %OBJ%hUGEDriver.obj %OBJ%%SONG%.obj
 

@@ -1,15 +1,17 @@
-@echo off
-@set PROJ=gbdk_player
+@rem @echo off
+@set PROJ=gbdk_player_banked
 @set GBDK=..\..\gbdk\
 @set GBDKLIB=%GBDK%lib\small\asxxxx\
 @set OBJ=build\
-@set SRC=player-gbdk\
+@set SRC=player-gbdk-banked\
 @set TGT=rom\
 
 @set DRV=hUGEDriver
 @set MOD=song
 
-@set CVTFLAGS=-b0
+@set BANK=2
+@set CVTFLAGS=-b%BANK%
+@set SONGFLAGS=-Wf-bo%BANK%
 
 @echo Cleanup...
 
@@ -29,6 +31,9 @@ tools\rgb2sdas %CVTFLAGS% %OBJ%%DRV%.obj
 
 @echo COMPILING WITH GBDK-2020...
 
-%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -o %TGT%%PROJ%.gb %SRC%%PROJ%.c song/C/%MOD%.c %LFILES%
+%GBDK%\bin\lcc -I%SRC% %SONGFLAGS% -c -o %OBJ%%MOD%.obj song/C/%MOD%.c
+@set LFILES=%LFILES% %OBJ%%MOD%.obj
+
+%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wl-yt1 -Wl-yo4 -o %TGT%%PROJ%.gb %SRC%%PROJ%.c %LFILES%
 
 @echo DONE!

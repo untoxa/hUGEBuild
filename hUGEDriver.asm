@@ -1,5 +1,5 @@
-include "include/hardware.inc"
-include "include/constants.inc"
+include "include/HARDWARE.INC"
+include "include/hUGE.inc"
 
 add_a_to_r16: MACRO
     add \2
@@ -106,8 +106,6 @@ tick: db
 counter: db
 current_wave: db
 
-;; Size of a channel in bytes
-CHANNEL_SIZE EQU 8
 ;; Amount to be shifted in order to skip a channel.
 CHANNEL_SIZE_EXPONENT EQU 3
 
@@ -159,11 +157,15 @@ highmask4: db
 
 _end_vars:
 
-SECTION "Sound Driver", ROM0
+SECTION "Sound Driver", ROMX
 
+_hUGE_init_banked::
+    ld hl, sp+2+4
+    jr continue_init
 _hUGE_init::
+    ld hl, sp+2
+continue_init:
     push bc
-    ld hl, sp+4
     ld a, [hl+]
     ld h, [hl]
     ld l, a
@@ -171,9 +173,13 @@ _hUGE_init::
     pop bc
     ret
 
+_hUGE_mute_channel_banked::
+    ld hl, sp+3+4
+    jr continue_mute
 _hUGE_mute_channel::
+    ld hl, sp+3
+continue_mute:
     push bc
-    ld hl, sp+5
     ld a, [hl-]
     and 1
     ld c, a
@@ -383,8 +389,10 @@ _convert_ch4_note:
 
 _update_channel:
     ;; Call with:
+    ;; Highmask in A
     ;; Channel in B
     ;; Note tone in DE
+    ld c, a
 
     dec b
     jr z, _update_channel2
@@ -402,37 +410,37 @@ ENDM
 _update_channel1:
     retMute 0
 
-    ld hl, highmask1
     ld a, e
     ld [rAUD1LOW], a
     ld a, d
+    or c
     ld [rAUD1HIGH], a
     ret
 _update_channel2:
     retMute 1
 
-    ld hl, highmask2
     ld a, e
     ld [rAUD2LOW], a
     ld a, d
+    or c
     ld [rAUD2HIGH], a
     ret
 _update_channel3:
     retMute 2
 
-    ld hl, highmask3
     ld a, e
     ld [rAUD3LOW], a
     ld a, d
+    or c
     ld [rAUD3HIGH], a
     ret
 _update_channel4:
     retMute 3
 
-    ; ld hl, highmask4
     ld a, e
     call _convert_ch4_note
     ld [rAUD4POLY], a
+    ; ld a, c
     xor a
     ld [rAUD4GO], a
     ret
@@ -661,7 +669,7 @@ fx_set_duty:
     ;; $9C0 = 75%
 
     ld a, b
-    or a ; cp 0
+    or a
     jr z, .chan1
 .chan2:
     retMute 1
@@ -931,7 +939,7 @@ set_chn_3_vol:
     jr nc, .one
     cp 5
     jr nc, .two
-    cp 0
+    or a
     jr z, .zero
 .three:
     ld a, %01100000
@@ -1000,7 +1008,7 @@ fx_vibrato:
     ld a, [counter]
     and e
     ld a, [hl]
-    jr nz, .go_up
+    jr z, .go_up
 .restore:
     call _convert_note
     jr .finish_vibrato
@@ -1012,6 +1020,7 @@ fx_vibrato:
 .finish_vibrato:
     ld d, h
     ld e, l
+    xor a
     jp _update_channel
 
 fx_arpeggio:
@@ -1067,6 +1076,7 @@ fx_arpeggio:
     call _convert_note
     ld d, h
     ld e, l
+    xor a
     jp _update_channel
 
 fx_porta_up:
@@ -1088,14 +1098,14 @@ fx_porta_up:
     ld a, c
     add_a_to_de
 
+.finish:
     ld a, d
     ld [hl-], a
     ld [hl], e
 
+    xor a
     jp _update_channel
 
-;; TODO: Maybe merge with fx_porta_up, since they're so similar? Would need
-;; to find a way to compare against effect code.
 fx_porta_down:
     ret z
     ;; A: tick
@@ -1115,11 +1125,7 @@ fx_porta_down:
     ld a, c
     sub_from_r16 d, e, c
 
-    ld a, d
-    ld [hl-], a
-    ld [hl], e
-
-    jp _update_channel
+    jr fx_porta_up.finish
 
 fx_toneporta:
     jr nz, .do_toneporta
@@ -1212,10 +1218,16 @@ fx_toneporta:
     ld e, l
 .done:
     pop hl
-    ld a, e
-    ld [hl+], a
+    ld [hl], e
+    inc hl
     ld [hl], d
 
+    ld a, 6
+    add_a_to_hl
+    ld a, [hl]
+    ld c, a
+    res 7, c
+    ld [hl], c
     jp _update_channel
 
 loadShort: MACRO
@@ -1266,6 +1278,7 @@ checkMute: MACRO
     jp nz, \2
 ENDM
 
+_hUGE_dosound_banked::
 _hUGE_dosound::
     ld a, [tick]
     or a
@@ -1296,7 +1309,6 @@ _hUGE_dosound::
     ld [rAUD1ENV], a
     inc de
     ld a, [de]
-    ld [rAUD1HIGH], a
 
 .write_mask1:
     ld [highmask1], a
@@ -1340,7 +1352,6 @@ _hUGE_dosound::
     ld [rAUD2ENV], a
     inc de
     ld a, [de]
-    ld [rAUD2HIGH], a
 
 .write_mask2:
     ld [highmask2], a
@@ -1414,7 +1425,6 @@ _addr = _addr + 1
 
 .no_wave_copy:
     ld a, [de]
-    ld [rAUD3HIGH], a
 
 .write_mask3:
     ld [highmask3], a
@@ -1446,7 +1456,7 @@ _addr = _addr + 1
     res 7, a ; Turn off the "initial" flag
     jr z, .write_mask4
 
-    checkMute 3, .do_setvol4 ; TODO: move this?
+    checkMute 3, .do_setvol4
 
     load_hl_ind noise_instruments
     sla e
@@ -1494,7 +1504,7 @@ _addr = _addr + 1
     call _load_note_data
 
     ld a, c
-    cp 0
+    or a
     jr z, .after_effect1
 
     ld e, 0
@@ -1507,7 +1517,7 @@ _addr = _addr + 1
     call _load_note_data
 
     ld a, c
-    cp 0
+    or a
     jr z, .after_effect2
 
     ld e, 1
@@ -1520,7 +1530,7 @@ _addr = _addr + 1
     call _load_note_data
 
     ld a, c
-    cp 0
+    or a
     jr z, .after_effect3
 
     ld e, 2
@@ -1566,7 +1576,7 @@ _addr = _addr + 1
 
 .done_macro:
     ld a, c
-    cp 0
+    or a
     jr z, .after_effect4
 
     ld e, 3
@@ -1598,7 +1608,7 @@ _newrow:
 
     ;; Check if we need to perform a row break or pattern break
     ld a, [row_break]
-    cp 0
+    or a
     jr z, .no_break
 
     ;; These are offset by one so we can check to see if they've
@@ -1607,7 +1617,7 @@ _newrow:
     ld b, a
 
     ld a, [next_order]
-    cp 0
+    or a
 
     ;; Maybe use HL instead?
     push af
@@ -1659,4 +1669,4 @@ _noreset:
     ret
 
 note_table:
-include "include/music.inc"
+include "include/hUGE_note_table.inc"
