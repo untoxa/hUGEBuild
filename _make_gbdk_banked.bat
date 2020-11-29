@@ -1,4 +1,4 @@
-@rem @echo off
+@echo off
 @set PROJ=gbdk_player_banked
 @set GBDK=..\..\gbdk\
 @set GBDKLIB=%GBDK%lib\small\asxxxx\
