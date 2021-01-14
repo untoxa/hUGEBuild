@@ -61,13 +61,6 @@ load_de_ind: MACRO
     ld d, a
 ENDM
 
-copy_pointer_from_hl: MACRO
-    ld a, [hl+]
-    ld [\1], a
-    ld a, [hl+]
-    ld [\1+1], a
-ENDM
-
 PATTERN_LENGTH EQU 64
 
 SECTION "Playback variables", WRAM0
@@ -75,6 +68,7 @@ _start_vars:
 
 ;; active song descriptor
 order_cnt: db
+_start_song_descriptor_pointers:
 order1: dw
 order2: dw
 order3: dw
@@ -86,6 +80,7 @@ noise_instruments: dw
 
 routines: dw
 waves: dw
+_end_song_descriptor_pointers:
 
 ;; variables
 mute_channels: db
@@ -224,7 +219,6 @@ hUGE_init::
 
     ld a, %11110000
     ld [envelope1], a
-    ld a, %11110000
     ld [envelope2], a
 
     ld a, 100
@@ -241,23 +235,20 @@ hUGE_init::
     ld a, [de]
     ld [order_cnt], a
 
-    copy_pointer_from_hl order1
-    copy_pointer_from_hl order2
-    copy_pointer_from_hl order3
-    copy_pointer_from_hl order4
+    ld c, _end_song_descriptor_pointers - (_start_song_descriptor_pointers)
+    ld de, order1
 
-    copy_pointer_from_hl duty_instruments
-    copy_pointer_from_hl wave_instruments
-    copy_pointer_from_hl noise_instruments
-
-    copy_pointer_from_hl routines
-    copy_pointer_from_hl waves
+.copy_song_descriptor_loop:
+    ld a, [hl+]
+    ld [de], a
+    inc de
+    dec c
+    jr nz, .copy_song_descriptor_loop
 
     ld a, [current_order]
     ld c, a ;; Current order index
-    call _refresh_patterns
 
-    ret
+    ;; Fall through into _refresh_patterns
 
 _refresh_patterns:
 ;; Loads pattern registers with pointers to correct pattern based on
@@ -267,12 +258,12 @@ _refresh_patterns:
 load_pattern: MACRO
     ld hl, \1
     ld a, [hl+]
+    add c
     ld h, [hl]
     ld l, a
-    ld a, b
-    ld b, 0
-    add hl, bc
-    ld b, a
+    adc h
+    sub l
+    ld h, a
 
     ld a, [hl+]
     ld [\2], a
@@ -379,7 +370,7 @@ _convert_ch4_note:
 
     ; C := (A mod 4)+4;
     ld a, h
-    and 3
+    and 3 ; mod 4
     add 4
 
     ; A := (C or (B shl 4))
@@ -440,7 +431,6 @@ _update_channel4:
     ld a, e
     call _convert_ch4_note
     ld [rAUD4POLY], a
-    ; ld a, c
     xor a
     ld [rAUD4GO], a
     ret
@@ -743,7 +733,7 @@ fx_vol_slide:
     swap a
     sub d
     jr nc, .cont1
-    ld a, 0
+    xor a
 .cont1:
     add e
     cp $10
@@ -1585,26 +1575,26 @@ _addr = _addr + 1
 .after_effect4:
 
 process_tick:
-    ld a, [counter]
-    inc a
-    ld [counter], a
+    ld hl, counter
+    inc [hl]
 
     ld a, [ticks_per_row]
     ld b, a
 
-    ld a, [tick]
+    ld hl, tick
+    ld a, [hl]
     inc a
 
     cp b
     jr z, _newrow
 
-    ld [tick], a
+    ld [hl], a
     ret
 
 _newrow:
     ;; Reset tick to 0
-    xor a ; ld a, 0
-    ld [tick], a
+    xor a
+    ld [hl], a
 
     ;; Check if we need to perform a row break or pattern break
     ld a, [row_break]
@@ -1621,7 +1611,7 @@ _newrow:
 
     ;; Maybe use HL instead?
     push af
-    ld a, 0
+    xor a
     ld [next_order], a
     ld [row_break], a
     pop af
@@ -1650,7 +1640,7 @@ _neworder:
     add a, 2
     cp c
     jr nz, _update_current_order
-    ld a, 0
+    xor a
 _update_current_order:
     ;; Call with:
     ;; A: The order to load
