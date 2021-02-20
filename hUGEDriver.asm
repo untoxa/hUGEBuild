@@ -99,6 +99,7 @@ temp_note_value: dw
 row: db
 tick: db
 counter: db
+hUGE_current_wave::
 current_wave: db
 
 ;; Amount to be shifted in order to skip a channel.
@@ -153,6 +154,12 @@ highmask4: db
 _end_vars:
 
 SECTION "Sound Driver", ROMX
+
+_hUGE_reset_wave_banked::
+_hUGE_reset_wave::
+    ld a, 100
+    ld [current_wave], a
+    ret
 
 _hUGE_init_banked::
     ld hl, sp+2+4
@@ -251,29 +258,41 @@ hUGE_init::
     ;; Fall through into _refresh_patterns
 
 _refresh_patterns:
-;; Loads pattern registers with pointers to correct pattern based on
-;; an order index
+    ;; Loads pattern registers with pointers to correct pattern based on
+    ;; an order index
 
-;; Call with c set to what order to load
-load_pattern: MACRO
-    ld hl, \1
+    ;; Call with c set to what order to load
+
+    IF DEF(PREVIEW_MODE)
+    db $fc ; signal order update to tracker
+    ENDC
+
+    ld hl, order1
+    ld de, pattern1
+    call .load_pattern
+
+    ld hl, order2
+    call .load_pattern
+
+    ld hl, order3
+    call .load_pattern
+
+    ld hl, order4
+    jr .load_pattern
+
+.load_pattern:
     ld a, [hl+]
-    add c
     ld h, [hl]
     ld l, a
-    adc h
-    sub l
-    ld h, a
+    ld a, c
+    add_a_to_hl
 
     ld a, [hl+]
-    ld [\2], a
-    ld a, [hl+]
-    ld [\2+1], a
-ENDM
-    load_pattern order1, pattern1
-    load_pattern order2, pattern2
-    load_pattern order3, pattern3
-    load_pattern order4, pattern4
+    ld [de], a
+    inc de
+    ld a, [hl]
+    ld [de], a
+    inc de
     ret
 
 _load_note_data:
@@ -1593,8 +1612,7 @@ process_tick:
 
 _newrow:
     ;; Reset tick to 0
-    xor a
-    ld [hl], a
+    ld [hl], 0
 
     ;; Check if we need to perform a row break or pattern break
     ld a, [row_break]
@@ -1654,7 +1672,7 @@ _noreset:
     ld [row], a
 
     IF DEF(PREVIEW_MODE)
-    db $fd
+    db $fd ; signal row update to tracker
     ENDC
     ret
 
