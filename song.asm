@@ -1,4 +1,5 @@
 include "include/hUGE.inc"
+include "constants.htt"
 
 SECTION "Song Data", ROMX
 

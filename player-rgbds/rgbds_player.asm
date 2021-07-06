@@ -155,7 +155,7 @@ _init:
     ld a, $77
     ld [rAUDVOL], a
 
-    ld hl, _song_descriptor
+    ld hl, SONG_DESCRIPTOR
     call hUGE_init
 
     ;; Enable the timer
