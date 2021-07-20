@@ -8,10 +8,10 @@ This refactored driver has several advantages:
 
 # How to use
 
-1. download hUGETracker binaries from the release: https://github.com/untoxa/hUGEBuild/releases/latest
-2. write a music modute in it, press "export .GB" button
+1. download hUGETracker binaries from the release: https://github.com/SuperDisk/hUGETracker/releases/latest
+2. write a music modute in it, export to C source file
 3. clone this repo
-4. copy *.htt files from hUGETracker\hUGEDriver\ folder to \song folder of this repo
+4. copy exported C file into the \song\C folder of this repo
 5. _make_gbdk.bat compiles a player using GBDK-2020, _make_rgbds.bat compiles a player using RGBDS; rom-files will be located in the \rom folder; you must have more GBDK-2020 v4.0, in case you want to compile gbdk_player.gb, because bat-scripts are written for it.
 6. objects that might be linked with your homebrew software are located in the \build folder: hUGEDriver.obj song.obj in RGBDS format, hUGEDriver.obj.o in SDAS format for use with GBDK.
 

@@ -24,11 +24,11 @@
 @echo Assembling song and driver...
 
 tools\rgbasm -o%OBJ%/%DRV%.obj hUGEDriver.asm
-tools\rgb2sdas %CVTFLAGS% %OBJ%/%DRV%.obj
-@set LFILES=%LFILES% %OBJ%/%DRV%.obj.o
+tools\rgb2sdas %CVTFLAGS% %OBJ%\%DRV%.obj
+%GBDK%\bin\sdar q %OBJ%\hUGEDriver.lib %OBJ%\%DRV%.obj.o
 
 @echo COMPILING WITH GBDK-2020...
 
-%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wm-yS -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c song/C/%MOD%.c %LFILES%
+%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wm-yS -Wl-k%OBJ% -Wl-lhUGEDriver.lib -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c song/C/%MOD%.c
 
 @echo DONE!

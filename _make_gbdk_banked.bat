@@ -9,7 +9,7 @@
 @set DRV=hUGEDriver
 @set MOD=song
 
-@set BANK=2
+@set BANK=1
 @set CVTFLAGS=-b%BANK%
 @set SONGFLAGS=-Wf-bo%BANK%
 
@@ -25,15 +25,15 @@
 
 @echo Assembling song and driver...
 
-tools\rgbasm -o%OBJ%/%DRV%.obj hUGEDriver.asm
-tools\rgb2sdas %CVTFLAGS% %OBJ%/%DRV%.obj
-@set LFILES=%LFILES% %OBJ%/%DRV%.obj.o
+tools\rgbasm -o%OBJ%\%DRV%.obj hUGEDriver.asm
+tools\rgb2sdas %CVTFLAGS% %OBJ%\%DRV%.obj
+%GBDK%\bin\sdar q %OBJ%\hUGEDriver.lib %OBJ%\%DRV%.obj.o
 
 @echo COMPILING WITH GBDK-2020...
 
 %GBDK%\bin\lcc -I%SRC% %SONGFLAGS% -c -o %OBJ%/%MOD%.obj song/C/%MOD%.c
 @set LFILES=%LFILES% %OBJ%/%MOD%.obj
 
-%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wm-yS -Wl-yt1 -Wl-yo4 -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c %LFILES%
+%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wm-yS -Wl-yt1 -Wl-yo4 -Wl-k%OBJ% -Wl-lhUGEDriver.lib -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c %LFILES%
 
 @echo DONE!
