@@ -1,1 +1,1 @@
-@python .\tools\romusage.py .\rom\gbdk_player_banked.gb
+@python .\tools\romusage.py .\rom\gbdk_player.gb

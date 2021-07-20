@@ -29,6 +29,6 @@ tools\rgb2sdas %CVTFLAGS% %OBJ%/%DRV%.obj
 
 @echo COMPILING WITH GBDK-2020...
 
-%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c song/C/%MOD%.c %LFILES%
+%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wm-yS -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c song/C/%MOD%.c %LFILES%
 
 @echo DONE!

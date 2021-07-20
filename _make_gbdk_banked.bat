@@ -34,6 +34,6 @@ tools\rgb2sdas %CVTFLAGS% %OBJ%/%DRV%.obj
 %GBDK%\bin\lcc -I%SRC% %SONGFLAGS% -c -o %OBJ%/%MOD%.obj song/C/%MOD%.c
 @set LFILES=%LFILES% %OBJ%/%MOD%.obj
 
-%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wl-yt1 -Wl-yo4 -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c %LFILES%
+%GBDK%\bin\lcc -I%SRC% -Wl-m -Wl-w -Wl-j -Wm-yS -Wl-yt1 -Wl-yo4 -o %TGT%/%PROJ%.gb %SRC%/%PROJ%.c %LFILES%
 
 @echo DONE!
