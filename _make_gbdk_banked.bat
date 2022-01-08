@@ -25,7 +25,7 @@
 
 @echo Assembling song and driver...
 
-tools\rgbasm -o%OBJ%\%DRV%.obj hUGEDriver.asm
+tools\rgbasm -DGBDK -o%OBJ%\%DRV%.obj hUGEDriver.asm
 tools\rgb2sdas %CVTFLAGS% %OBJ%\%DRV%.obj
 %GBDK%\bin\sdar q %OBJ%\hUGEDriver.lib %OBJ%\%DRV%.obj.o
 
