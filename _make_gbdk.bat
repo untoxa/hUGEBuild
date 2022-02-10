@@ -25,7 +25,7 @@
 
 tools\rgbasm -DGBDK -o%OBJ%/%DRV%.obj hUGEDriver.asm
 tools\rgb2sdas %CVTFLAGS% %OBJ%\%DRV%.obj
-%GBDK%\bin\sdar q %OBJ%\hUGEDriver.lib %OBJ%\%DRV%.obj.o
+%GBDK%\bin\sdar -ru %OBJ%\hUGEDriver.lib %OBJ%\%DRV%.obj.o
 
 @echo COMPILING WITH GBDK-2020...
 
