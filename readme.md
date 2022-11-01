@@ -15,6 +15,7 @@ This refactored driver has several advantages:
 5. _make_gbdk.bat compiles a player using GBDK-2020, _make_rgbds.bat compiles a player using RGBDS; rom-files will be located in the \rom folder; you must have more GBDK-2020 v4.0, in case you want to compile gbdk_player.gb, because bat-scripts are written for it.
 6. objects that might be linked with your homebrew software are located in the \build folder: hUGEDriver.obj song.obj in RGBDS format, hUGEDriver.obj.o in SDAS format for use with GBDK.
 
+
 # Notes
 
 1. C header file for the driver is here: \player-gbdk\hUGEDriver.h, example of usage is gbdk_player.c
@@ -39,3 +40,26 @@ rgb2sdas is a utility that converts RGBDS object files to SDAS object files. unf
 
 	example 2; converting the song object, place it into bank 1, rename symbol to Intro:
 		rgb2sdas -c_CODE_1 -r_song_descriptor=_Intro song.obj
+
+
+# Build from linux
+
+## Build rgb2sdas
+
+Prerequisite: 
+
+```
+sudo apt install fpc
+```
+
+```
+cd tools/src
+make 
+```
+
+## Build player GBDK 
+
+```
+cd ../..
+make -f Makefile_gbdk
+```

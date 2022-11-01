@@ -163,9 +163,9 @@ begin
   with TObjFileStream.Create(afilename, fmOpenRead) do try 
     Read(Result, SizeOf(TRObj) - SizeOf(Result.Symbols) - SizeOf(Result.Sections) - SizeOf(Result.Nodes));
 
-    if (not CompareMem(@Result.ID, @Sign, sizeof(Result.ID))) or (not InRange(Result.RevisionNumber, 6, 8)) then
+    if (not CompareMem(@Result.ID, @Sign, sizeof(Result.ID))) or (not InRange(Result.RevisionNumber, 6, 9)) then
       Die(
-        'Unsupported object file version! This version of rgb2sdas supports RGB9, revision 6, 7, or 8 files. The provided file is '+
+        'Unsupported object file version! This version of rgb2sdas supports RGB9, revision 6, 7, 8 or 9 files. The provided file is '+
         Result.ID+', revision '+IntToStr(Result.RevisionNumber)+'.'
       );
 
@@ -590,7 +590,7 @@ begin
     Writeln(F, 'XL3');
     Writeln(F, Format('H %x areas %x global symbols', [RObj.NumberOfSections, idx]));
     Writeln(F, Format('M %s', [StringReplace(ExtractFileName(sourcename), '.', '_', [rfReplaceAll])]));
-    Writeln(F, 'O -mgbz80');
+    Writeln(F, 'O -msm83');
 
     // output all imported symbols
     for I:= Low(RObj.Symbols) to High(RObj.Symbols) do

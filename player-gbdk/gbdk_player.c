@@ -22,10 +22,10 @@ void main() {
 
     __critical {
         hUGE_init(&Intro);
-        add_VBL(hUGE_dosound);
     }
         
     while(1) {
+        hUGE_dosound();
         wait_vbl_done();
         joy = joypad();
         switch (joy) {

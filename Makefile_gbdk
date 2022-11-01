@@ -1,0 +1,24 @@
+PROJ=gbdk_player
+GBDK=../gbdk/
+OBJ=build
+SRC=player-gbdk
+TGT=rom
+
+DRV=hUGEDriver
+MOD=song
+CVTFLAGS=-b0
+
+all:
+	mkdir -p $(OBJ)
+	mkdir -p $(TGT)
+
+	rgbasm -DGBDK -o$(OBJ)/$(DRV).obj hUGEDriver.asm
+	tools/rgb2sdas $(CVTFLAGS) $(OBJ)/$(DRV).obj
+	$(GBDK)bin/sdar -ru $(OBJ)/hUGEDriver.lib $(OBJ)/$(DRV).obj.o
+	$(GBDK)bin/lcc -I$(SRC) -Wl-m -Wl-w -Wl-j -Wm-yS -Wl-k$(OBJ) -Wl-lhUGEDriver.lib -o $(TGT)/$(PROJ).gb $(SRC)/$(PROJ).c song/C/$(MOD).c
+
+clean:
+	rm -f $(TGT)/$(PROJ).gb
+	rm -f $(TGT)/$(PROJ).map
+	rm -f $(TGT)/$(PROJ).ihx
+	rm -f $(TGT)/$(PROJ).noi
