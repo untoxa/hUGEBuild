@@ -57,7 +57,7 @@ class RGBObject(object):
 
             if (sect['SectType'] in [ROM0, ROMX]):
                 sect['Data'] = data[offset:offset+size]; offset += size
-                sect['nPatches'] = npatches = unpack_from('<i', data, offset)[0]; offset += calcsize('i')
+                npatches = unpack_from('<i', data, offset)[0]; offset += calcsize('i')
                 sect['Patches'] = patches = []
                 for j in range(npatches):
                     sourcefile, linenum, ofs, pcsectionid, pcoffset, patchtype, rpnsize = unpack_from('<iiiiiBi', data, offset); offset += calcsize('<iiiiiBi')
