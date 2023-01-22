@@ -1,9 +1,9 @@
 @echo off
 
-@set OBJ=build\
+@set OBJ=obj\
 @set PROJ=rgbds_player
 @set SONG=song
-@set TGT=rom\
+@set TGT=build\
 
 @if not exist %OBJ% mkdir %OBJ%
 @if exist %OBJ%hUGEDriver.obj del %OBJ%hUGEDriver.obj

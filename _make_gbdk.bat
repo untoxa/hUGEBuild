@@ -2,9 +2,9 @@
 @set PROJ=gbdk_player
 @set GBDK=..\..\gbdk\
 @set GBDKLIB=%GBDK%lib\small\asxxxx\
-@set OBJ=build
+@set OBJ=obj
 @set SRC=player-gbdk
-@set TGT=rom
+@set TGT=build
 
 @set DRV=hUGEDriver
 @set MOD=song
@@ -24,8 +24,8 @@
 @echo Assembling song and driver...
 
 tools\rgbasm -DGBDK -o%OBJ%/%DRV%.obj hUGEDriver.asm
-tools\rgb2sdas %CVTFLAGS% %OBJ%\%DRV%.obj
-%GBDK%\bin\sdar -ru %OBJ%\hUGEDriver.lib %OBJ%\%DRV%.obj.o
+python tools\rgb2sdas.py %CVTFLAGS% -o %OBJ%\%DRV%.o %OBJ%\%DRV%.obj
+%GBDK%\bin\sdar -ru %OBJ%\hUGEDriver.lib %OBJ%\%DRV%.o
 
 @echo COMPILING WITH GBDK-2020...
 
